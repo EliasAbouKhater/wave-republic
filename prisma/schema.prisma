@@ -1,0 +1,198 @@
+// Dreamland — Postgres schema
+// Guideline: no permanent deletes for user-facing entities; use `active` flags.
+// Order line items live on the order as JSON to keep prices stable across
+// menu edits (a re-priced item shouldn't change past orders).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  owner
+  manager
+  cashier
+}
+
+enum VenueType {
+  restaurant
+  kiosk
+}
+
+enum Fulfillment {
+  delivery
+  pickup
+}
+
+enum OrderStatus {
+  confirmed
+  preparing
+  ready
+  delivering
+  delivered
+  picked_up
+  cancelled
+}
+
+model Zone {
+  id        String   @id                       // "A", "B", …
+  name      String                             // "Wave Pool"
+  code      String   @unique                   // "DL-WAVE-01" — printed on the sign
+  color     String                             // "#0BA5E9"
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurants Restaurant[]
+  orders      Order[]      @relation("OrderDeliveryZone")
+  sessions    ZoneSession[]
+}
+
+model Restaurant {
+  id           String    @id                   // "grill", "tacos", …
+  name         String
+  type         VenueType
+  cuisine      String
+  zoneId       String
+  prep         Int                              // minutes
+  rating       Float
+  pinColor     String
+  mapX         Int                              // 0-100 (%)
+  mapY         Int
+  thumbLabel   String                           // "burgers", "tacos", …
+  qrSlug       String?   @unique                 // short URL slug for direct-menu QR (e.g. "wave-cafe")
+  active       Boolean   @default(true)
+  deliveryEnabled Boolean @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  zone         Zone           @relation(fields: [zoneId], references: [id])
+  categories   MenuCategory[]
+  items        MenuItem[]
+  orders       Order[]
+  staff        Staff[]
+}
+
+model MenuCategory {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  slot         String                            // "food" | "drinks" | "sweets" (for browse filter)
+  sortOrder    Int      @default(0)
+  active       Boolean  @default(true)
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items      MenuItem[]
+
+  @@index([restaurantId, sortOrder])
+}
+
+model MenuItem {
+  id           String   @id @default(cuid())
+  restaurantId String
+  categoryId   String
+  name         String
+  description  String?
+  priceCents   Int
+  available    Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  active       Boolean  @default(true)
+
+  restaurant Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, categoryId, sortOrder])
+}
+
+model Staff {
+  id         String   @id @default(cuid())
+  username   String   @unique
+  passwordHash String
+  name       String
+  role       Role
+  kioskId    String?
+  active     Boolean  @default(true)
+  removable  Boolean  @default(true)          // guards the seeded owner/manager
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  kiosk    Restaurant? @relation(fields: [kioskId], references: [id])
+  sessions StaffSession[]
+}
+
+model StaffSession {
+  id        String   @id @default(cuid())
+  staffId   String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+/// Zone-session issued when a customer scans a QR. Ordering is blocked
+/// without a valid, unexpired zone session bound to their phone.
+model ZoneSession {
+  id        String   @id @default(cuid())
+  zoneId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  zone Zone @relation(fields: [zoneId], references: [id])
+
+  @@index([expiresAt])
+}
+
+model Order {
+  id                String       @id            // formatted "1043", "1044" … stable per README
+  restaurantId      String
+  fulfillment       Fulfillment
+  deliveryZoneId    String?
+  status            OrderStatus  @default(confirmed)
+  items             Json                        // [{ id, name, priceCents, qty }]
+  subtotalCents     Int
+  serviceFeeCents   Int          @default(0)
+  deliveryFeeCents  Int          @default(0)
+  totalCents        Int
+  prepMinutes       Int
+  placedAt          DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  paymentIntentId   String?                     // stripe (null while mocked)
+  paymentStatus     String       @default("mocked_succeeded")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  zone       Zone?      @relation("OrderDeliveryZone", fields: [deliveryZoneId], references: [id])
+
+  @@index([restaurantId, status])
+  @@index([placedAt])
+}
+
+/// Monotonic sequence for human-friendly order numbers ("1043", "1044").
+/// Prototype starts at 1043 (nextId in the design).
+model OrderSequence {
+  id      Int @id @default(1)
+  nextVal Int @default(1043)
+}
+
+/// Phase 1 analytics — track anonymous visitor engagement with the menu.
+/// entityType: "restaurant" | "item" | "map_pin"
+/// source: "park" | "bracelet" | "resto" | "direct" (from ?src= on QR entry)
+/// Dedup enforced in application code (30-min window per visitor+entity).
+model PageView {
+  id         String   @id @default(cuid())
+  visitorId  String
+  entityType String
+  entityId   String
+  source     String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([visitorId, createdAt])
+}
