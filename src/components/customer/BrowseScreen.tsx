@@ -52,7 +52,7 @@ export function BrowseScreen({
         style={{ background: "linear-gradient(150deg,#0EA5A4,#0BA5E9)", paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
       >
         <div className="font-display font-extrabold text-[13px] uppercase" style={{ letterSpacing: "0.6px", opacity: 0.85 }}>
-          Dreamland Menu
+          Wave Republic
         </div>
         <h1 className="font-display font-extrabold text-[26px] mt-2 leading-tight">What are you craving?</h1>
 

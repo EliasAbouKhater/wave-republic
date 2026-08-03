@@ -13,7 +13,7 @@ export default async function LoginPage() {
     >
       <div className="w-full max-w-[380px]">
         <div className="text-center mb-6">
-          <div className="font-display font-extrabold text-white text-[30px]">Dreamland</div>
+          <div className="font-display font-extrabold text-white text-[30px]">Wave Republic</div>
           <div className="text-white/80 text-[12px] font-extrabold uppercase tracking-[0.6px] mt-1">
             Manager console
           </div>

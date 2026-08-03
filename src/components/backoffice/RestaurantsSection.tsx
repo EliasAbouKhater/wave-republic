@@ -21,7 +21,7 @@ export function RestaurantsSection({ restaurants, canEdit }: { restaurants: R[];
     <div>
       <SectionTitle
         title="Restaurants & kiosks"
-        subtitle="Everywhere Dreamland customers can order from"
+        subtitle="Everywhere guests can order from"
         right={
           canEdit ? (
             <button className="btn-teal font-display font-extrabold text-[13.5px] px-4 py-2.5 rounded-[14px]">

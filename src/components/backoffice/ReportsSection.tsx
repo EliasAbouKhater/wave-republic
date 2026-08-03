@@ -19,7 +19,7 @@ export function ReportsSection({
   const deliveryPct = Math.round((deliveryCount / total) * 100);
   return (
     <div>
-      <SectionTitle title="Reports" subtitle="How Dreamland is performing across every dimension" />
+      <SectionTitle title="Reports" subtitle="How the park is performing across every dimension" />
 
       <KpiGrid
         items={[

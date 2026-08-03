@@ -1,7 +1,7 @@
 {
-  "name": "Dreamland Menu",
-  "short_name": "Dreamland",
-  "description": "Explore restaurants and menus at Dreamland Waterpark.",
+  "name": "Wave Republic",
+  "short_name": "Wave Republic",
+  "description": "Order food and drinks from anywhere in the park.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -65,7 +65,7 @@ function QrCard({ entry }: { entry: QrEntry }) {
         const pngUrl = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = pngUrl;
-        a.download = `dreamland-qr-${entry.id}.png`;
+        a.download = `wave-republic-qr-${entry.id}.png`;
         a.click();
         URL.revokeObjectURL(pngUrl);
       }, "image/png");
@@ -78,7 +78,7 @@ function QrCard({ entry }: { entry: QrEntry }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `dreamland-qr-${entry.id}.svg`;
+    a.download = `wave-republic-qr-${entry.id}.svg`;
     a.click();
     URL.revokeObjectURL(url);
   };

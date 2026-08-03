@@ -19,13 +19,13 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Dreamland Menu",
-  description: "Explore restaurants and menus at Dreamland Waterpark.",
+  title: "Wave Republic",
+  description: "Order food and drinks from anywhere in the park.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Dreamland",
+    title: "Wave Republic",
   },
   icons: {
     icon: "/favicon.png",
