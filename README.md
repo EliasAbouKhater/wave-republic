@@ -2,7 +2,7 @@
 
 Order food and drinks from anywhere in a waterpark — scan a QR code, browse restaurants, place an order, track it to your zone.
 
-**Live demo:** [dreamland-pi.vercel.app](https://dreamland-pi.vercel.app) &nbsp;·&nbsp; **Manager console:** [/login](https://dreamland-pi.vercel.app/login) (`manager` / `dreamland`)
+**Live demo:** [wave-republic.vercel.app](https://wave-republic.vercel.app) &nbsp;·&nbsp; **Manager console:** [/login](https://wave-republic.vercel.app/login) (`manager` / `dreamland`)
 
 ![Customer home](public/screenshots/01-customer-home.png)
 
