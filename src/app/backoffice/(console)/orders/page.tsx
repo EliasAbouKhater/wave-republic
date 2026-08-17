@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function OrdersPage() {
   const orders = await db.order.findMany({
     where: { status: { notIn: ["delivered", "picked_up", "cancelled"] } },
-    include: { zone: true, restaurant: true },
+    include: { restaurant: true },
     orderBy: { placedAt: "asc" },
   });
 
@@ -22,7 +22,6 @@ export default async function OrdersPage() {
         placedAt: o.placedAt.toISOString(),
         items: o.items as { name: string; qty: number; priceCents: number }[],
         total: o.totalCents / 100,
-        zoneName: o.zone?.name ?? null,
         restaurantName: o.restaurant.name,
       }))}
     />

@@ -13,7 +13,6 @@ type BoardOrder = {
   placedAt: string;
   items: { name: string; qty: number; priceCents: number }[];
   total: number;
-  zoneName: string | null;
   restaurantName?: string;
 };
 
@@ -130,9 +129,6 @@ function OrderCard({
         >
           {order.fulfillment}
         </span>
-        {order.zoneName && (
-          <span className="text-[11px] font-body text-teal-muted">{order.zoneName}</span>
-        )}
       </div>
       <div className="mt-2 flex flex-col gap-0.5">
         {order.items.map((it, i) => (

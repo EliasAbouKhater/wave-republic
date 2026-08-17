@@ -10,7 +10,6 @@ export type MenuData = {
   cuisine: string;
   rating: number;
   prep: number;
-  zone: string;
   thumbLabel: string;
   categories: {
     id: string;
@@ -86,10 +85,6 @@ export function MenuScreen({ data }: { data: MenuData }) {
           <span className="flex items-center gap-1">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
             ~{data.prep} min
-          </span>
-          <span className="flex items-center gap-1" style={{ color: "#FF6B4A" }}>
-            <svg width="10" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s7-6.5 7-13a7 7 0 1 0-14 0c0 6.5 7 13 7 13Z"/></svg>
-            {data.zone}
           </span>
         </div>
       </div>

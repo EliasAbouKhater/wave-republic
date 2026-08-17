@@ -6,7 +6,6 @@ import type { Fulfillment } from "@prisma/client";
 export type PlaceOrderInput = {
   restaurantId: string;
   fulfillment: Fulfillment;
-  deliveryZoneId: string | null;
   items: { id: string; name: string; priceCents: number; qty: number }[];
   subtotalCents: number;
   serviceFeeCents: number;
@@ -19,13 +18,10 @@ export type PlaceOrderInput = {
  * client (task #7). Increments the OrderSequence to produce a human-friendly
  * order number ("1043", "1044", …) matching the prototype.
  *
- * Task #8 will lock this behind a valid zone-session cookie.
+ * Phase 2 scaffolding — no caller yet.
  */
 export async function placeOrder(input: PlaceOrderInput) {
   if (input.items.length === 0) throw new Error("Cannot place an empty order.");
-  if (input.fulfillment === "delivery" && !input.deliveryZoneId) {
-    throw new Error("Delivery requires a target zone.");
-  }
 
   const orderId = await db.$transaction(async (tx) => {
     // Atomically bump the sequence and use its previous value as the order id.
@@ -43,7 +39,6 @@ export async function placeOrder(input: PlaceOrderInput) {
         id,
         restaurantId: input.restaurantId,
         fulfillment: input.fulfillment,
-        deliveryZoneId: input.deliveryZoneId,
         status: "confirmed",
         items: input.items,
         subtotalCents: input.subtotalCents,

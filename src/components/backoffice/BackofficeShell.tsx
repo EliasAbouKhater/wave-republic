@@ -14,7 +14,6 @@ const nav: NavItem[] = [
   { key: "analytics",   label: "Analytics",      href: "/backoffice/analytics" },
   { key: "restaurants", label: "Restaurants",    href: "/backoffice/restaurants" },
   { key: "menus",       label: "Menus & prices", href: "/backoffice/menus" },
-  { key: "zones",       label: "Zones",          href: "/backoffice/zones" },
   { key: "qr",          label: "QR codes",       href: "/backoffice/qr" },
   { key: "orders",      label: "Orders",         href: "/backoffice/orders",  phase2: true },
   { key: "team",        label: "Team",           href: "/backoffice/team",    phase2: true },

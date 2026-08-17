@@ -18,6 +18,8 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url 
 // Simple password hashing for seed users — real auth switches to bcrypt in task #8.
 const hash = (pw: string) => createHash("sha256").update(`dreamland:${pw}`).digest("hex");
 
+// Zones have no UI (removed 2026-08-17) but the model is retained for Phase 2 and
+// `Restaurant.zoneId` is a required FK — seeding them keeps venue creation working.
 const zones = [
   { id: "A", name: "Wave Pool",         code: "DL-WAVE-01", color: "#0BA5E9" },
   { id: "B", name: "Lazy River",        code: "DL-LAZY-02", color: "#14B8A6" },

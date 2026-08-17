@@ -9,7 +9,6 @@ export default async function MenuPage({ params }: { params: Promise<{ restoId: 
   const resto = await db.restaurant.findUnique({
     where: { id: restoId, active: true },
     include: {
-      zone: true,
       categories: {
         where: { active: true },
         orderBy: { sortOrder: "asc" },
@@ -34,7 +33,6 @@ export default async function MenuPage({ params }: { params: Promise<{ restoId: 
     cuisine: resto.cuisine,
     rating: resto.rating,
     prep: resto.prep,
-    zone: resto.zone.name,
     thumbLabel: resto.thumbLabel,
     categories: resto.categories.map((c) => ({
       id: c.id,

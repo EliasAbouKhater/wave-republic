@@ -9,7 +9,6 @@ export type BrowseRestaurant = {
   name: string;
   type: "restaurant" | "kiosk";
   cuisine: string;
-  zoneId: string;
   prep: number;
   rating: number;
   pinColor: string;
@@ -19,7 +18,6 @@ export type BrowseRestaurant = {
   slots: string[]; // "food" | "drinks" | "sweets"
 };
 
-export type BrowseZone = { id: string; name: string; color: string };
 
 type Filter = "all" | "food" | "drinks" | "sweets";
 const filters: { key: Filter; label: string }[] = [
@@ -31,10 +29,8 @@ const filters: { key: Filter; label: string }[] = [
 
 export function BrowseScreen({
   restaurants,
-  zones,
 }: {
   restaurants: BrowseRestaurant[];
-  zones: BrowseZone[];
 }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [filter, setFilter] = useState<Filter>("all");
@@ -116,7 +112,7 @@ export function BrowseScreen({
         {view === "list" ? (
           <ListView restaurants={shown} />
         ) : (
-          <MapView restaurants={shown} zones={zones} />
+          <MapView restaurants={shown} />
         )}
       </div>
     </div>
@@ -175,7 +171,7 @@ function ListView({ restaurants }: { restaurants: BrowseRestaurant[] }) {
   );
 }
 
-function MapView({ restaurants, zones }: { restaurants: BrowseRestaurant[]; zones: BrowseZone[] }) {
+function MapView({ restaurants }: { restaurants: BrowseRestaurant[] }) {
   const [, startTransition] = useTransition();
 
   return (
@@ -213,18 +209,6 @@ function MapView({ restaurants, zones }: { restaurants: BrowseRestaurant[]; zone
               <span className="text-[13px]">{r.name.charAt(0)}</span>
             </div>
           </Link>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {zones.map((z) => (
-          <span
-            key={z.id}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
-            style={{ background: "#fff", border: "1px solid rgba(16,48,47,0.06)", color: "var(--color-teal-ink)" }}
-          >
-            <span className="w-2 h-2 rounded-full" style={{ background: z.color }} />
-            {z.name}
-          </span>
         ))}
       </div>
     </div>

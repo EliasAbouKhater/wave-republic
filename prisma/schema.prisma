@@ -37,6 +37,13 @@ enum OrderStatus {
   cancelled
 }
 
+/// Zones have NO user interface as of 2026-08-17 — the backoffice section and every
+/// guest-facing mention (map legend, menu location pin, venue cards, reports chart)
+/// were removed at Elias's request. The model is retained deliberately:
+/// `Restaurant.zoneId` is a required FK, and Phase 2 needs zones for sunbed-delivery
+/// destinations plus the ZoneSession anti-scam gate. New venues attach silently to
+/// the default zone (see src/lib/venueActions.ts). Do not surface zones in the UI
+/// again without asking.
 model Zone {
   id        String   @id                       // "A", "B", …
   name      String                             // "Wave Pool"

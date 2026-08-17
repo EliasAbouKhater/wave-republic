@@ -2,14 +2,12 @@ import { SectionTitle, KpiGrid, BarChart } from "./DashboardShared";
 
 export function ReportsSection({
   revenueByStation,
-  ordersByZone,
   deliveryCount,
   pickupCount,
   topSellers,
   totals,
 }: {
   revenueByStation: { name: string; cents: number }[];
-  ordersByZone: { name: string; color: string; count: number }[];
   deliveryCount: number;
   pickupCount: number;
   topSellers: { name: string; qty: number }[];
@@ -52,30 +50,7 @@ export function ReportsSection({
         </div>
       </div>
 
-      <div className="grid gap-3.5 mt-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
-        <div
-          className="p-5"
-          style={{ background: "#fff", borderRadius: 18, border: "1px solid rgba(16,48,47,0.06)", boxShadow: "var(--shadow-card)" }}
-        >
-          <div className="font-display font-extrabold text-[15px] text-teal-ink mb-3">Orders by zone</div>
-          <div className="flex flex-col gap-2.5">
-            {ordersByZone.map((z) => {
-              const max = Math.max(1, ...ordersByZone.map((x) => x.count));
-              return (
-                <div key={z.name}>
-                  <div className="flex items-center justify-between text-[12.5px] font-extrabold">
-                    <div className="text-teal-ink">{z.name}</div>
-                    <div className="text-teal-muted">{z.count}</div>
-                  </div>
-                  <div className="h-2 rounded-full mt-1 overflow-hidden" style={{ background: "#EEF6F4" }}>
-                    <div className="h-full rounded-full" style={{ width: `${(z.count / max) * 100}%`, background: z.color }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
+      <div className="grid gap-3.5 mt-4" style={{ gridTemplateColumns: "1fr" }}>
         <div
           className="p-5"
           style={{ background: "#fff", borderRadius: 18, border: "1px solid rgba(16,48,47,0.06)", boxShadow: "var(--shadow-card)" }}
