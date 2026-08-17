@@ -66,13 +66,13 @@ model Restaurant {
   zoneId       String
   prep         Int                              // minutes
   rating       Float
-  pinColor     String
+  pinColor     String                           // auto-assigned from a palette; no UI picker
   mapX         Int                              // 0-100 (%)
   mapY         Int
   thumbLabel   String                           // "burgers", "tacos", …
   qrSlug       String?   @unique                 // short URL slug for direct-menu QR (e.g. "wave-cafe")
   active       Boolean   @default(true)
-  deliveryEnabled Boolean @default(true)
+  deliveryEnabled Boolean @default(true)         // Phase 2 only — no UI, always true for now
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

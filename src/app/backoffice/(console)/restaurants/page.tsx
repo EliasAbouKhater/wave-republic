@@ -19,7 +19,6 @@ export default async function RestaurantsPage() {
         thumbLabel: r.thumbLabel,
         pinColor: r.pinColor,
         active: r.active,
-        deliveryEnabled: r.deliveryEnabled,
         itemCount: r._count.items,
       }))}
     />

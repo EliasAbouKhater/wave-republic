@@ -21,10 +21,15 @@ export type VenueInput = {
   type: "restaurant" | "kiosk";
   cuisine: string;
   prep: number;
-  pinColor: string;
   thumbLabel: string;
-  deliveryEnabled: boolean;
 };
+
+/**
+ * Map-pin colours. The colour picker was removed from the UI, but pins still need
+ * to be distinguishable on the browse map, so new venues cycle through this palette
+ * by creation order instead of asking the manager to choose.
+ */
+const PIN_COLORS = ["#0EA5A4", "#FF6B4A", "#0BA5E9", "#22C55E", "#8B5CF6", "#F59E0B"];
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -52,7 +57,6 @@ function validate(input: VenueInput): string | null {
   if (!Number.isFinite(input.prep) || input.prep < 0 || input.prep > 240) {
     return "Prep time must be between 0 and 240 minutes";
   }
-  if (!/^#[0-9a-fA-F]{6}$/.test(input.pinColor)) return "Pin colour must be a hex value";
   return null;
 }
 
@@ -92,11 +96,11 @@ export async function createVenue(input: VenueInput): Promise<ActionResult> {
       zoneId: zone.id,
       prep: Math.round(input.prep),
       rating: 0,
-      pinColor: input.pinColor,
+      pinColor: PIN_COLORS[(await db.restaurant.count()) % PIN_COLORS.length],
       mapX: 50,
       mapY: 50,
       thumbLabel: (input.thumbLabel.trim() || input.name.trim()).slice(0, 12).toLowerCase(),
-      deliveryEnabled: input.deliveryEnabled,
+      deliveryEnabled: true,
     },
   });
 
@@ -121,9 +125,7 @@ export async function updateVenue(id: string, input: VenueInput): Promise<Action
       type: input.type,
       cuisine: input.cuisine.trim(),
       prep: Math.round(input.prep),
-      pinColor: input.pinColor,
       thumbLabel: (input.thumbLabel.trim() || input.name.trim()).slice(0, 12).toLowerCase(),
-      deliveryEnabled: input.deliveryEnabled,
     },
   });
 

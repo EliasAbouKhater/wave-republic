@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { SectionTitle } from "./DashboardShared";
 import {
-  Modal, Field, TextInput, Select, Toggle, ErrorNote, ModalActions, ConfirmModal,
+  Modal, Field, TextInput, Select, ErrorNote, ModalActions, ConfirmModal,
 } from "./FormKit";
 import { createVenue, updateVenue, setVenueActive, type VenueInput } from "@/lib/venueActions";
 
@@ -17,13 +17,11 @@ type R = {
   thumbLabel: string;
   pinColor: string;
   active: boolean;
-  deliveryEnabled: boolean;
   itemCount: number;
 };
 
 const blank: VenueInput = {
-  name: "", type: "restaurant", cuisine: "", prep: 10,
-  pinColor: "#0EA5A4", thumbLabel: "", deliveryEnabled: true,
+  name: "", type: "restaurant", cuisine: "", prep: 10, thumbLabel: "",
 };
 
 export function RestaurantsSection({ restaurants, canEdit }: { restaurants: R[]; canEdit: boolean }) {
@@ -194,9 +192,8 @@ function VenueModal({ venue, onClose }: { venue: R | null; onClose: () => void }
   const [form, setForm] = useState<VenueInput>(
     venue
       ? {
-          name: venue.name, type: venue.type, cuisine: venue.cuisine, prep: venue.prep,
-          pinColor: venue.pinColor, thumbLabel: venue.thumbLabel,
-          deliveryEnabled: venue.deliveryEnabled,
+          name: venue.name, type: venue.type, cuisine: venue.cuisine,
+          prep: venue.prep, thumbLabel: venue.thumbLabel,
         }
       : blank
   );
@@ -251,20 +248,6 @@ function VenueModal({ venue, onClose }: { venue: R | null; onClose: () => void }
           onChange={(e) => set("thumbLabel", e.target.value)} placeholder="burgers"
         />
       </Field>
-
-      <Field label="Map pin colour">
-        <input
-          type="color" value={form.pinColor}
-          onChange={(e) => set("pinColor", e.target.value)}
-          style={{ width: "100%", height: 40, border: "1px solid rgba(16,48,47,0.12)", borderRadius: 12, background: "#F4FBF9" }}
-        />
-      </Field>
-
-      <Toggle
-        checked={form.deliveryEnabled}
-        onChange={(v) => set("deliveryEnabled", v)}
-        label="Offers delivery to sunbeds"
-      />
 
       {venue && (
         <p className="text-[11.5px] font-body text-teal-muted mb-1">
