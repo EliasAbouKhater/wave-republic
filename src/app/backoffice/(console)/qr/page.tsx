@@ -3,7 +3,28 @@ import QRCode from "qrcode";
 import { db } from "@/lib/db";
 import { QrCodesSection, type QrEntry } from "@/components/backoffice/QrCodesSection";
 
+/**
+ * QR codes are physically printed on park signage and entry bracelets. Once printed
+ * they cannot be recalled, so the URL burned into them is FROZEN.
+ *
+ * `QR_BASE_URL` is the single source of truth. It must never change while printed
+ * codes are in circulation — see docs/qr-stability.md. The request Host header is
+ * only a dev-time fallback so `npm run dev` still produces scannable codes; it is
+ * deliberately NOT used in production, because the host varies by deployment URL
+ * (preview deploys, vercel.app vs custom domain) and would silently change codes.
+ */
 async function baseUrl(): Promise<string> {
+  const pinned = process.env.QR_BASE_URL?.trim();
+  if (pinned) return pinned.replace(/\/+$/, "");
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "QR_BASE_URL is not set. Printed QR codes require a pinned canonical URL — " +
+        "refusing to generate codes from the request Host header in production. " +
+        "See docs/qr-stability.md."
+    );
+  }
+
   const h = await headers();
   const host = h.get("host") ?? "localhost:3311";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
@@ -17,6 +38,7 @@ async function makeQr(url: string): Promise<string> {
 
 export default async function QrPage() {
   const base = await baseUrl();
+  const isPinned = Boolean(process.env.QR_BASE_URL?.trim());
 
   const restaurants = await db.restaurant.findMany({
     where: { active: true, qrSlug: { not: null } },
@@ -26,29 +48,20 @@ export default async function QrPage() {
 
   const entries: QrEntry[] = [];
 
-  // Park-wide QR
-  const parkUrl = `${base}/?src=park`;
+  // Single entry QR — one code for park signage AND entry bracelets.
+  // Merged 2026-08-17 so the park prints one artwork everywhere.
+  // The `?src=park` tag is frozen: analytics rows already reference it.
+  const entryUrl = `${base}/?src=park`;
   entries.push({
-    id: "park",
-    kind: "park",
-    title: "Park-wide QR",
-    subtitle: "Print for signs around the park",
-    url: parkUrl,
-    svg: await makeQr(parkUrl),
+    id: "entry",
+    kind: "entry",
+    title: "Entry QR",
+    subtitle: "One code for park signs and entry bracelets",
+    url: entryUrl,
+    svg: await makeQr(entryUrl),
   });
 
-  // Bracelet QR
-  const braceletUrl = `${base}/?src=bracelet`;
-  entries.push({
-    id: "bracelet",
-    kind: "bracelet",
-    title: "Entry bracelet QR",
-    subtitle: "Print on bracelet templates",
-    url: braceletUrl,
-    svg: await makeQr(braceletUrl),
-  });
-
-  // Per-restaurant
+  // Per-restaurant — slug is immutable once assigned (see docs/qr-stability.md)
   for (const r of restaurants) {
     if (!r.qrSlug) continue;
     const url = `${base}/r/${r.qrSlug}?src=resto`;
@@ -62,5 +75,5 @@ export default async function QrPage() {
     });
   }
 
-  return <QrCodesSection entries={entries} />;
+  return <QrCodesSection entries={entries} baseUrl={base} isPinned={isPinned} />;
 }

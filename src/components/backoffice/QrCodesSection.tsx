@@ -2,16 +2,23 @@
 
 export type QrEntry = {
   id: string;
-  kind: "park" | "bracelet" | "restaurant";
+  kind: "entry" | "restaurant";
   title: string;
   subtitle: string;
   url: string;
   svg: string;
 };
 
-export function QrCodesSection({ entries }: { entries: QrEntry[] }) {
-  const park = entries.filter((e) => e.kind === "park");
-  const bracelet = entries.filter((e) => e.kind === "bracelet");
+export function QrCodesSection({
+  entries,
+  baseUrl,
+  isPinned,
+}: {
+  entries: QrEntry[];
+  baseUrl: string;
+  isPinned: boolean;
+}) {
+  const entry = entries.filter((e) => e.kind === "entry");
   const restos = entries.filter((e) => e.kind === "restaurant");
 
   return (
@@ -23,8 +30,49 @@ export function QrCodesSection({ entries }: { entries: QrEntry[] }) {
         </p>
       </header>
 
-      <Group title="Entry points" entries={[...park, ...bracelet]} />
+      <PrintNotice baseUrl={baseUrl} isPinned={isPinned} />
+
+      <Group title="Entry point" entries={entry} />
       <Group title="Per-restaurant / kiosk" entries={restos} />
+    </div>
+  );
+}
+
+/**
+ * These codes get printed on signage and bracelets. Make the freeze contract
+ * visible to whoever is about to hit Download.
+ */
+function PrintNotice({ baseUrl, isPinned }: { baseUrl: string; isPinned: boolean }) {
+  if (!isPinned) {
+    return (
+      <div
+        className="p-3.5 rounded-[14px] flex items-start gap-3"
+        style={{ background: "#FCEBE7", border: "1px solid rgba(229,83,59,0.25)" }}
+      >
+        <span className="text-[16px] leading-none mt-0.5">&#9888;</span>
+        <div className="text-[12.5px] font-body" style={{ color: "#8C2F1C" }}>
+          <strong className="font-display font-extrabold">Not safe to print.</strong>{" "}
+          <code>QR_BASE_URL</code> is not set, so these codes were built from the address
+          you happen to be browsing on ({baseUrl}). They will break on any other domain.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="p-3.5 rounded-[14px] flex items-start gap-3"
+      style={{ background: "#F4FBF9", border: "1px dashed rgba(16,48,47,0.16)" }}
+    >
+      <span className="text-[16px] leading-none mt-0.5">&#128272;</span>
+      <div className="text-[12.5px] font-body text-teal-muted">
+        <strong className="font-display font-extrabold text-teal-ink">
+          These codes are frozen.
+        </strong>{" "}
+        All codes point at <strong>{baseUrl}</strong>. Once printed they cannot be
+        recalled, so this address and each venue&rsquo;s QR link never change &mdash;
+        removing a venue hides it from guests but keeps its code resolving.
+      </div>
     </div>
   );
 }
