@@ -51,6 +51,14 @@ these on signage and bracelets; a changed URL is dead plastic. In short:
 - Changing a QR-reachable route = add a redirect, never reissue the code.
 - One merged **Entry QR** (`/?src=park`) covers park signs *and* entry bracelets.
 
+## Menu item photos
+Managers upload one photo per menu item; guests see it as the menu-row thumbnail
+and the item-page hero. Storage is the **public** Vercel Blob store `blob_images`,
+addressed by `blob_images_READ_WRITE_TOKEN` (passed explicitly — the legacy
+`BLOB_READ_WRITE_TOKEN` points at a PRIVATE store and would 403 for guests).
+Replacing or clearing a photo deletes the old blob. JPEG/PNG/WebP, 5 MB cap,
+enforced server-side in `src/lib/uploadActions.ts`.
+
 ## Rules
 - Money is **AED**, stored as integer `priceCents` (fils). Never float, never `$`.
 - No permanent deletes ever (workspace-wide rule) — venues, categories, items and staff
