@@ -55,11 +55,6 @@ export function TeamSection({
       <SectionTitle
         title="Team & access"
         subtitle="Managers, cashiers and their station assignments"
-        right={
-          <button className="btn-teal font-display font-extrabold text-[13.5px] px-4 py-2.5 rounded-[14px]">
-            + Add member
-          </button>
-        }
       />
 
       <Group label="Owner">
