@@ -10,15 +10,16 @@ import {
   createItem, updateItem, setItemAvailable, setItemActive,
   type ItemInput,
 } from "@/lib/menuActions";
+import { ImageUpload } from "./ImageUpload";
 
-type Item = { id: string; name: string; description: string; price: number; available: boolean; active: boolean };
+type Item = { id: string; name: string; description: string; price: number; available: boolean; active: boolean; imageUrl: string | null };
 type Category = { id: string; name: string; slot: string; active: boolean; items: Item[] };
 type R = { id: string; name: string; categories: Category[] };
 
 // Prices are AED — the app runs in Dubai. (The backoffice used to render "$".)
 const money = (n: number) => `AED ${n.toFixed(2)}`;
 
-const blankItem: ItemInput = { name: "", description: "", priceAed: 0, available: true };
+const blankItem: ItemInput = { name: "", description: "", priceAed: 0, available: true, imageUrl: null };
 
 export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEdit: boolean }) {
   const [activeId, setActiveId] = useState<string>(restaurants[0]?.id ?? "");
@@ -187,6 +188,21 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                           opacity: it.active ? 1 : 0.55,
                         }}
                       >
+                        {it.imageUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={it.imageUrl}
+                            alt=""
+                            style={{ width: 34, height: 34, objectFit: "cover", borderRadius: 8, flexShrink: 0 }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+                              background: "repeating-linear-gradient(45deg,#DBEEEB 0 4px,#EAF7F5 4px 8px)",
+                            }}
+                          />
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="font-display font-extrabold text-[14px] text-teal-ink truncate">{it.name}</div>
                           {it.description && (
@@ -344,7 +360,7 @@ function ItemModal({
 }: { categoryId: string; item: Item | null; onClose: () => void }) {
   const [form, setForm] = useState<ItemInput>(
     item
-      ? { name: item.name, description: item.description, priceAed: item.price, available: item.available }
+      ? { name: item.name, description: item.description, priceAed: item.price, available: item.available, imageUrl: item.imageUrl }
       : blankItem
   );
   const [error, setError] = useState<string | null>(null);
@@ -383,6 +399,8 @@ function ItemModal({
           onChange={(e) => set("priceAed", Number(e.target.value))}
         />
       </Field>
+
+      <ImageUpload value={form.imageUrl} onChange={(url) => set("imageUrl", url)} />
 
       <Toggle checked={form.available} onChange={(v) => set("available", v)} label="Available today" />
 

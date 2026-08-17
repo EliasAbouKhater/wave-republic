@@ -32,6 +32,7 @@ export default async function MenusPage() {
             id: i.id,
             name: i.name,
             description: i.description ?? "",
+            imageUrl: i.imageUrl,
             price: i.priceCents / 100,
             available: i.available,
             active: i.active,

@@ -103,6 +103,7 @@ model MenuItem {
   categoryId   String
   name         String
   description  String?
+  imageUrl     String?                           // public Vercel Blob URL; null = placeholder tile
   priceCents   Int
   available    Boolean  @default(true)
   sortOrder    Int      @default(0)

@@ -14,6 +14,7 @@
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { requireManager } from "@/lib/auth";
+import { deleteItemImage } from "@/lib/uploadActions";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -22,6 +23,7 @@ export type ItemInput = {
   description: string;
   priceAed: number;
   available: boolean;
+  imageUrl: string | null;
 };
 
 function refreshMenuViews(restaurantId: string) {
@@ -123,6 +125,7 @@ export async function createItem(categoryId: string, input: ItemInput): Promise<
       categoryId: cat.id,
       name: input.name.trim(),
       description: input.description.trim() || null,
+      imageUrl: input.imageUrl,
       priceCents: toFils(input.priceAed),
       available: input.available,
       sortOrder: (last?.sortOrder ?? -1) + 1,
@@ -141,7 +144,7 @@ export async function updateItem(itemId: string, input: ItemInput): Promise<Acti
 
   const item = await db.menuItem.findUnique({
     where: { id: itemId },
-    select: { restaurantId: true },
+    select: { restaurantId: true, imageUrl: true },
   });
   if (!item) return { ok: false, error: "Item not found" };
 
@@ -150,10 +153,17 @@ export async function updateItem(itemId: string, input: ItemInput): Promise<Acti
     data: {
       name: input.name.trim(),
       description: input.description.trim() || null,
+      imageUrl: input.imageUrl,
       priceCents: toFils(input.priceAed),
       available: input.available,
     },
   });
+
+  // The old photo is now unreachable — drop it so the store does not fill with
+  // orphans. Best-effort: the DB row is what matters.
+  if (item.imageUrl && item.imageUrl !== input.imageUrl) {
+    await deleteItemImage(item.imageUrl);
+  }
 
   refreshMenuViews(item.restaurantId);
   return { ok: true };

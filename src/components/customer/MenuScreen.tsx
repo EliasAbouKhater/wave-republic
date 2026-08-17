@@ -14,7 +14,7 @@ export type MenuData = {
   categories: {
     id: string;
     name: string;
-    items: { id: string; name: string; description: string | null; price: number; available: boolean }[];
+    items: { id: string; name: string; description: string | null; price: number; available: boolean; imageUrl: string | null }[];
   }[];
 };
 
@@ -114,13 +114,24 @@ export function MenuScreen({ data }: { data: MenuData }) {
               href={`/item/${it.id}`}
               className="card p-3 flex items-center gap-3 hover:brightness-[1.02] active:scale-[0.99] transition"
             >
-              <div
-                className="grid place-items-center flex-shrink-0"
-                style={{
-                  width: 56, height: 56, borderRadius: 12,
-                  background: "repeating-linear-gradient(45deg, #DBEEEB 0 6px, #EAF7F5 6px 12px)",
-                }}
-              />
+              {it.imageUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={it.imageUrl}
+                  alt=""
+                  loading="lazy"
+                  className="flex-shrink-0"
+                  style={{ width: 56, height: 56, borderRadius: 12, objectFit: "cover" }}
+                />
+              ) : (
+                <div
+                  className="grid place-items-center flex-shrink-0"
+                  style={{
+                    width: 56, height: 56, borderRadius: 12,
+                    background: "repeating-linear-gradient(45deg, #DBEEEB 0 6px, #EAF7F5 6px 12px)",
+                  }}
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="font-display font-extrabold text-[14.5px] text-teal-ink truncate">{it.name}</div>
                 {it.description && (

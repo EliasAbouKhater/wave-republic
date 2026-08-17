@@ -43,6 +43,7 @@ export default async function MenuPage({ params }: { params: Promise<{ restoId: 
         description: i.description,
         price: i.priceCents / 100,
         available: i.available,
+        imageUrl: i.imageUrl,
       })),
     })),
   };

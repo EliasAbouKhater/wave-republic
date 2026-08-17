@@ -22,23 +22,34 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ ite
 
   return (
     <div className="min-h-screen w-full flex flex-col max-w-[520px] mx-auto" style={{ background: "#EAF7F5" }}>
-      {/* banner */}
+      {/* banner — the item photo when the manager uploaded one, else the house gradient */}
       <div
         className="relative flex-shrink-0"
         style={{
           height: 240,
-          background:
-            "linear-gradient(150deg,#0EA5A4,#0BA5E9), repeating-linear-gradient(45deg, rgba(255,255,255,0.16) 0 12px, transparent 12px 24px)",
-          backgroundBlendMode: "overlay",
+          background: item.imageUrl
+            ? "#0B3A39"
+            : "linear-gradient(150deg,#0EA5A4,#0BA5E9), repeating-linear-gradient(45deg, rgba(255,255,255,0.16) 0 12px, transparent 12px 24px)",
+          backgroundBlendMode: item.imageUrl ? undefined : "overlay",
         }}
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, rgba(255,255,255,0.14) 0 12px, transparent 12px 24px)",
-          }}
-        />
+        {item.imageUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: "cover" }}
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "repeating-linear-gradient(45deg, rgba(255,255,255,0.14) 0 12px, transparent 12px 24px)",
+            }}
+          />
+        )}
         <Link
           href={`/menu/${item.restaurant.id}`}
           className="absolute left-4 grid place-items-center"
@@ -49,7 +60,13 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ ite
             <path d="m15 6-6 6 6 6" />
           </svg>
         </Link>
-        <div className="absolute bottom-4 left-0 right-0 text-center text-white/85 text-[13px] font-extrabold uppercase tracking-[0.6px]" style={{ pointerEvents: "none" }}>
+        <div
+          className="absolute bottom-4 left-0 right-0 text-center text-white/85 text-[13px] font-extrabold uppercase tracking-[0.6px]"
+          style={{
+            pointerEvents: "none",
+            textShadow: item.imageUrl ? "0 1px 6px rgba(0,0,0,0.55)" : undefined,
+          }}
+        >
           {item.restaurant.thumbLabel}
         </div>
       </div>
