@@ -35,8 +35,8 @@ export function LoginForm() {
           autoFocus
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="rounded-[12px] px-3 py-2.5 text-[14px] font-body text-teal-ink"
-          style={{ background: "#F4FBF9", border: "1px solid rgba(16,48,47,0.08)" }}
+          className="rounded-[12px] px-3 py-2.5 text-[16px] font-body text-teal-ink"
+          style={{ background: "#F4FBF9", border: "1px solid rgba(16,48,47,0.08)", minHeight: 44 }}
           required
         />
       </label>
@@ -47,8 +47,8 @@ export function LoginForm() {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-[12px] px-3 py-2.5 text-[14px] font-body text-teal-ink"
-          style={{ background: "#F4FBF9", border: "1px solid rgba(16,48,47,0.08)" }}
+          className="rounded-[12px] px-3 py-2.5 text-[16px] font-body text-teal-ink"
+          style={{ background: "#F4FBF9", border: "1px solid rgba(16,48,47,0.08)", minHeight: 44 }}
           required
         />
       </label>

@@ -82,17 +82,19 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
           </p>
         </div>
       ) : (
-        <div className="flex gap-6 items-start">
-          <div className="w-56 flex-shrink-0 flex flex-col gap-1">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-stretch md:items-start">
+          {/* Venue picker: a swipeable chip row on phones, a rail on desktop. */}
+          <div className="w-full md:w-56 flex-shrink-0 flex flex-row md:flex-col gap-2 md:gap-1 overflow-x-auto md:overflow-x-visible no-scrollbar">
             {restaurants.map((r) => (
               <button
                 key={r.id}
                 onClick={() => setActiveId(r.id)}
-                className="text-left rounded-[12px] px-3 py-2.5 font-display font-extrabold text-[13.5px]"
+                className="text-left rounded-[12px] px-3 py-2.5 font-display font-extrabold text-[13.5px] flex-shrink-0 md:flex-shrink whitespace-nowrap md:whitespace-normal"
                 style={{
                   background: activeId === r.id ? "var(--color-teal)" : "#fff",
                   color: activeId === r.id ? "#fff" : "var(--color-teal-ink)",
                   border: "1px solid rgba(16,48,47,0.06)",
+                  minHeight: 44,
                 }}
               >
                 {r.name}
@@ -104,7 +106,7 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
             {removedCount > 0 && (
               <button
                 onClick={() => setShowRemoved((v) => !v)}
-                className="text-[12.5px] font-display font-extrabold mb-3.5 px-3 py-1.5 rounded-[10px]"
+                className="text-[12.5px] font-display font-extrabold mb-3.5 px-3 py-1.5 rounded-[10px] tap-target"
                 style={{ background: showRemoved ? "#EAF7F5" : "#F4FBF9", color: "#0A6E6C" }}
               >
                 {showRemoved ? "Hide removed" : `Show removed (${removedCount})`}
@@ -127,7 +129,7 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
               const items = showRemoved ? c.items : c.items.filter((i) => i.active);
               return (
                 <div key={c.id} className="mb-5" style={{ opacity: c.active ? 1 : 0.6 }}>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
                     <div className="font-display font-extrabold text-[15px] text-teal-ink">{c.name}</div>
                     {!c.active && (
                       <span
@@ -141,14 +143,14 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                       <>
                         <button
                           onClick={() => { setError(null); setItemModal({ categoryId: c.id, item: null }); }}
-                          className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px]"
+                          className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px] tap-target"
                           style={{ background: "#EAF7F5", color: "#0A6E6C" }}
                         >
                           + Item
                         </button>
                         <button
                           onClick={() => { setError(null); setCatModal(c); }}
-                          className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px]"
+                          className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px] tap-target"
                           style={{ background: "#F4FBF9", color: "#5E807E" }}
                         >
                           Rename
@@ -160,7 +162,7 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                               : run(() => setCategoryActive(c.id, true))
                           }
                           disabled={pending}
-                          className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px]"
+                          className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px] tap-target"
                           style={{
                             background: c.active ? "#FCEBE7" : "#EAF7F5",
                             color: c.active ? "#E5533B" : "#0A6E6C",
@@ -182,7 +184,7 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                     {items.map((it, i) => (
                       <div
                         key={it.id}
-                        className="flex items-center gap-3 px-4 py-3"
+                        className="flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-2 px-4 py-3"
                         style={{
                           borderTop: i === 0 ? "none" : "1px solid rgba(16,48,47,0.05)",
                           opacity: it.active ? 1 : 0.55,
@@ -203,15 +205,16 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                             }}
                           />
                         )}
-                        <div className="flex-1 min-w-0">
+                        {/* Claims the rest of line 1; controls wrap to line 2 on phones. */}
+                        <div className="min-w-0 flex-1" style={{ flexBasis: "8rem" }}>
                           <div className="font-display font-extrabold text-[14px] text-teal-ink truncate">{it.name}</div>
                           {it.description && (
                             <div className="text-[12px] font-body text-teal-muted truncate">{it.description}</div>
                           )}
                         </div>
                         <div
-                          className="font-display font-extrabold text-[14px]"
-                          style={{ color: "var(--color-teal)", minWidth: 92, textAlign: "right" }}
+                          className="font-display font-extrabold text-[14px] md:min-w-[92px] text-right"
+                          style={{ color: "var(--color-teal)" }}
                         >
                           {money(it.price)}
                         </div>
@@ -220,7 +223,7 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                             onClick={() => run(() => setItemAvailable(it.id, !it.available))}
                             disabled={pending || !it.active}
                             title="Toggle availability"
-                            className="text-[10.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md"
+                            className="text-[10.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md tap-target"
                             style={{
                               background: it.available ? "#EAF7F5" : "#FCEBE7",
                               color: it.available ? "#0A6E6C" : "#E5533B",
@@ -243,7 +246,7 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                           <>
                             <button
                               onClick={() => { setError(null); setItemModal({ categoryId: c.id, item: it }); }}
-                              className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px]"
+                              className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px] tap-target"
                               style={{ background: "#F4FBF9", color: "#5E807E" }}
                             >
                               Edit
@@ -255,7 +258,7 @@ export function MenusSection({ restaurants, canEdit }: { restaurants: R[]; canEd
                                   : run(() => setItemActive(it.id, true))
                               }
                               disabled={pending}
-                              className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px]"
+                              className="text-[11px] font-display font-extrabold px-2 py-1 rounded-[8px] tap-target"
                               style={{
                                 background: it.active ? "#FCEBE7" : "#EAF7F5",
                                 color: it.active ? "#E5533B" : "#0A6E6C",

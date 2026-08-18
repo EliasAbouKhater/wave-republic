@@ -10,12 +10,12 @@ export function SectionTitle({
   right?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between mb-4 gap-4">
-      <div>
-        <h1 className="font-display font-extrabold text-[26px] text-teal-ink leading-tight">{title}</h1>
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3 sm:gap-4">
+      <div className="min-w-0">
+        <h1 className="font-display font-extrabold text-[22px] sm:text-[26px] text-teal-ink leading-tight">{title}</h1>
         {subtitle && <p className="text-[13px] font-body text-teal-muted mt-1">{subtitle}</p>}
       </div>
-      {right}
+      {right && <div className="flex-shrink-0">{right}</div>}
     </div>
   );
 }
@@ -41,7 +41,7 @@ export function KpiGrid({
   items: { label: string; value: string; accent?: string }[];
 }) {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
       {items.map((k) => (
         <div key={k.label} className="card p-4">
           <div className="text-[11.5px] font-extrabold uppercase tracking-wider text-teal-muted">

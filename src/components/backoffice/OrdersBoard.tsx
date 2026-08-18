@@ -66,7 +66,7 @@ export function OrdersBoard({
         right={<LiveBadge />}
       />
 
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+      <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {columns.map((c) => (
           <div key={c.key} className="min-w-0">
             <div className="flex items-center gap-2 mb-2">

@@ -28,7 +28,7 @@ export function ReportsSection({
         ]}
       />
 
-      <div className="grid gap-3.5 mt-4" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
+      <div className="grid gap-3.5 mt-4 grid-cols-1 md:[grid-template-columns:1.4fr_1fr]">
         <BarChart
           title="Revenue by station"
           bars={revenueByStation.map((s) => ({ label: s.name.split(" ")[0], value: Math.round(s.cents / 100) }))}

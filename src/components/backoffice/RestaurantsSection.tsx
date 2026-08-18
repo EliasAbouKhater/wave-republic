@@ -72,7 +72,7 @@ export function RestaurantsSection({ restaurants, canEdit }: { restaurants: R[];
         </button>
       )}
 
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+      <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((r) => (
           <div
             key={r.id}
@@ -93,7 +93,7 @@ export function RestaurantsSection({ restaurants, canEdit }: { restaurants: R[];
                 {r.thumbLabel}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <div className="font-display font-extrabold text-[15px] text-teal-ink truncate">{r.name}</div>
                   <span
                     className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md"
@@ -114,7 +114,7 @@ export function RestaurantsSection({ restaurants, canEdit }: { restaurants: R[];
                   )}
                 </div>
                 <div className="text-[12px] font-body text-teal-muted mt-0.5 truncate">{r.cuisine}</div>
-                <div className="flex items-center gap-3 text-[11.5px] font-extrabold text-teal-muted mt-1.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-extrabold text-teal-muted mt-1.5">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full" style={{ background: r.pinColor }} />
                     {r.type === "restaurant" ? "Restaurant" : "Kiosk"}
@@ -125,26 +125,26 @@ export function RestaurantsSection({ restaurants, canEdit }: { restaurants: R[];
               </div>
             </div>
             {canEdit && (
-              <div className="flex gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-3">
                 <Link
                   href={`/menu/${r.id}`}
-                  className="text-[12px] font-display font-extrabold px-3 py-1.5 rounded-[10px]"
-                  style={{ background: "#EAF7F5", color: "#0A6E6C" }}
+                  className="text-[12px] font-display font-extrabold px-3 py-1.5 rounded-[10px] grid place-items-center"
+                  style={{ minHeight: 44, background: "#EAF7F5", color: "#0A6E6C" }}
                 >
                   Preview
                 </Link>
                 <button
                   onClick={() => { setError(null); setEditing(r); }}
-                  className="text-[12px] font-display font-extrabold px-3 py-1.5 rounded-[10px]"
-                  style={{ background: "#F4FBF9", color: "#5E807E" }}
+                  className="text-[12px] font-display font-extrabold px-3 py-1.5 rounded-[10px] grid place-items-center"
+                  style={{ minHeight: 44, background: "#F4FBF9", color: "#5E807E" }}
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => (r.active ? setConfirming(r) : toggleActive(r))}
                   disabled={pending}
-                  className="text-[12px] font-display font-extrabold px-3 py-1.5 rounded-[10px]"
-                  style={{ background: r.active ? "#FCEBE7" : "#EAF7F5", color: r.active ? "#E5533B" : "#0A6E6C" }}
+                  className="text-[12px] font-display font-extrabold px-3 py-1.5 rounded-[10px] grid place-items-center"
+                  style={{ minHeight: 44, background: r.active ? "#FCEBE7" : "#EAF7F5", color: r.active ? "#E5533B" : "#0A6E6C" }}
                 >
                   {r.active ? "Remove" : "Restore"}
                 </button>

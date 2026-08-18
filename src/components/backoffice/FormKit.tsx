@@ -34,7 +34,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center p-4"
+      className="fixed inset-0 z-50 grid place-items-end sm:place-items-center justify-items-center p-0 sm:p-4 overflow-y-auto"
       style={{ background: "rgba(9,32,31,0.45)" }}
       onClick={onClose}
     >
@@ -42,14 +42,14 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-h-[90vh] overflow-y-auto"
+        className="w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-[20px] sm:rounded-[20px] p-5 sm:p-[22px]"
         style={{
           maxWidth: 460,
           background: "#fff",
-          borderRadius: 20,
           border: "1px solid rgba(16,48,47,0.08)",
           boxShadow: "0 20px 60px rgba(9,32,31,0.25)",
-          padding: 22,
+          // Bottom sheet on phones — clears the home indicator.
+          paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -80,8 +80,11 @@ const controlStyle: React.CSSProperties = {
   background: "#F4FBF9",
   border: "1px solid rgba(16,48,47,0.12)",
   borderRadius: 12,
-  padding: "10px 12px",
-  fontSize: 14,
+  padding: "11px 12px",
+  // 16px is deliberate: iOS Safari zooms the viewport on focus for anything
+  // smaller, which strands the manager zoomed-in after every field.
+  fontSize: 16,
+  minHeight: 44, // comfortable touch target
   color: "var(--color-teal-ink)",
   fontFamily: "var(--font-sans)",
 };
@@ -108,12 +111,12 @@ export function Toggle({
   label: string;
 }) {
   return (
-    <label className="flex items-center gap-2.5 mb-3.5 cursor-pointer">
+    <label className="flex items-center gap-2.5 mb-3.5 cursor-pointer" style={{ minHeight: 44 }}>
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        style={{ width: 17, height: 17, accentColor: "var(--color-teal)" }}
+        style={{ width: 20, height: 20, accentColor: "var(--color-teal)", flexShrink: 0 }}
       />
       <span className="text-[13.5px] font-body text-teal-ink">{label}</span>
     </label>

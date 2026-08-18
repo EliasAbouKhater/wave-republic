@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Baloo_2, Nunito } from "next/font/google";
 import { NavProgress } from "@/components/NavProgress";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -17,6 +17,16 @@ const nunito = Nunito({
   weight: ["400", "600", "700", "800"],
   display: "swap",
 });
+
+// Without this, phones assume a ~980px canvas and zoom out. The customer app is
+// capped at 520px so it merely looked small; the backoffice was unusable.
+// No `maximumScale`/`userScalable` — pinch-zoom stays available.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover", // pairs with the env(safe-area-inset-*) padding below
+  themeColor: "#0EA5A4",
+};
 
 export const metadata: Metadata = {
   title: "Wave Republic",

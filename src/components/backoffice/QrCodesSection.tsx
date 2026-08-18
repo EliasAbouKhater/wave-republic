@@ -24,7 +24,7 @@ export function QrCodesSection({
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-display font-extrabold text-[26px] text-teal-ink">QR codes</h1>
+        <h1 className="font-display font-extrabold text-[22px] sm:text-[26px] text-teal-ink">QR codes</h1>
         <p className="text-[13px] font-body text-teal-muted mt-1">
           Print and distribute. Every scan is attributed by source in Analytics.
         </p>
@@ -82,7 +82,7 @@ function Group({ title, entries }: { title: string; entries: QrEntry[] }) {
   return (
     <section>
       <h2 className="font-display font-extrabold text-[17px] text-teal-ink mb-3">{title}</h2>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {entries.map((e) => (
           <QrCard key={e.id} entry={e} />
         ))}
@@ -138,10 +138,11 @@ function QrCard({ entry }: { entry: QrEntry }) {
         <div className="text-[11.5px] font-body text-teal-muted mt-0.5">{entry.subtitle}</div>
       </div>
       <div
-        className="grid place-items-center"
+        className="grid place-items-center qr-canvas"
         style={{
-          width: 200,
-          height: 200,
+          width: "100%",
+          maxWidth: 200,
+          aspectRatio: "1 / 1", // stays square as it shrinks; QR must not distort
           background: "#fff",
           padding: 6,
           borderRadius: 12,
@@ -155,14 +156,14 @@ function QrCard({ entry }: { entry: QrEntry }) {
       <div className="flex gap-2 w-full">
         <button
           onClick={download}
-          className="flex-1 font-display font-extrabold text-[12.5px] px-3 py-2 rounded-[12px]"
+          className="flex-1 font-display font-extrabold text-[12.5px] px-3 py-2 rounded-[12px] min-h-[44px]"
           style={{ background: "var(--color-teal)", color: "#fff" }}
         >
           Download PNG
         </button>
         <button
           onClick={downloadSvg}
-          className="flex-1 font-display font-extrabold text-[12.5px] px-3 py-2 rounded-[12px]"
+          className="flex-1 font-display font-extrabold text-[12.5px] px-3 py-2 rounded-[12px] min-h-[44px]"
           style={{ background: "#EAF7F5", color: "#0A6E6C" }}
         >
           SVG

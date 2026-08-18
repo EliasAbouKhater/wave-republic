@@ -121,6 +121,32 @@ button:focus-visible, a[href]:focus-visible {
   .font-display { font-family: var(--font-display); }
   .font-body    { font-family: var(--font-sans); }
 
+  /* Hides the scrollbar on deliberately-swipeable rows (customer filter chips,
+     backoffice bottom tabs). The row still scrolls. */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Dense inline row controls (menu rows, category headers) are deliberately
+     small on desktop. On touch devices they must still be tappable, so grow
+     them only where there is no fine pointer. */
+  @media (pointer: coarse) {
+    .tap-target { min-height: 44px; padding-left: 12px; padding-right: 12px; }
+  }
+
+  /* The QR SVG is injected with its own intrinsic size; make it fill the
+     (now fluid) canvas instead. */
+  .qr-canvas > svg { width: 100%; height: 100%; display: block; }
+
+  /* Backoffice mobile chrome: content clears the fixed top bar and bottom tabs.
+     Both collapse to 0 at md, where the sidebar takes over. */
+  .bo-shell {
+    --bo-pad-top: calc(56px + env(safe-area-inset-top));
+    --bo-pad-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 768px) {
+    .bo-shell { --bo-pad-top: 0px; --bo-pad-bottom: 0px; }
+  }
+
   .btn-coral {
     background: var(--color-coral);
     color: #fff;

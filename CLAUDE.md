@@ -8,7 +8,9 @@ Waterpark food-ordering app. Local folder is `dreamland/`; the **public brand is
 
 Two connected surfaces in one Next.js codebase:
 - **Customer** (mobile PWA, `~390px` iOS-frame viewport): scan QR → browse (list) → menu.
-- **Backoffice** (desktop, `~1180px`): Manager login, analytics, venue + menu CRUD, QR codes.
+- **Backoffice** (responsive, phone → desktop): Manager login, analytics, venue + menu CRUD, QR codes.
+  Below `md` (768px) the sidebar becomes a fixed bottom tab bar + compact top bar;
+  grids collapse, modals become bottom sheets. See "Responsive rules" below.
 
 Built for a **real waterpark client**. Live on Vercel (Hobby) + Neon Postgres (Frankfurt).
 
@@ -59,6 +61,30 @@ addressed by `blob_images_READ_WRITE_TOKEN` (passed explicitly — the legacy
 Replacing or clearing a photo deletes the old blob. JPEG/PNG/WebP, 5 MB cap,
 enforced server-side in `src/lib/uploadActions.ts`.
 
+## Responsive rules
+Both surfaces are phone-first; the backoffice was made responsive 2026-08-18.
+- **`viewport` is exported from `src/app/layout.tsx`** (`width=device-width`,
+  `viewportFit=cover`). Without it phones assume a ~980px canvas — this was missing
+  until 2026-08-18 and made every other responsive fix cosmetic. Never remove it.
+  No `maximumScale`/`userScalable`: pinch-zoom must stay available.
+- **Breakpoint is `md` (768px).** Below it: sidebar → fixed bottom tab bar
+  (`shortLabel` in the `nav` array is the tab caption), identity + sign-out → fixed
+  top bar, content padded by `--bo-pad-top`/`--bo-pad-bottom` (`.bo-shell` in
+  `globals.css`, both 0 at `md`).
+- **Bottom tabs scroll horizontally past ~5 items** — Phase 2 adds Orders/Team/Reports
+  for 7 total, which must degrade rather than crush the labels.
+- **Inputs are 16px minimum.** Anything smaller makes iOS Safari zoom on focus and
+  strands the manager zoomed-in. Applies to `FormKit` controls and `LoginForm`.
+- **Touch targets ≥44px.** Dense inline row controls use `.tap-target`, which only
+  grows them under `@media (pointer: coarse)` so desktop density is preserved.
+- **Never set a fixed `gridTemplateColumns` inline** — use Tailwind responsive
+  `grid-cols-*`. Three inline grids (Orders/Reports/Team) were left broken behind the
+  Phase-2 flag by exactly this and had to be fixed retroactively.
+- **Wide tables scroll, they do not squeeze**: `overflow-x-auto` + a `min-w-*` on the
+  table itself. `overflow-x-auto` alone just lets the columns collide.
+- Verified at 390×844 against a **production build** (`next start`), not just dev —
+  a stale `.next` silently served the old CSS and hid every fix.
+
 ## Rules
 - Money is **AED**, stored as integer `priceCents` (fils). Never float, never `$`.
 - No permanent deletes ever (workspace-wide rule) — venues, categories, items and staff
@@ -81,4 +107,5 @@ Elias reviews UI changes before they ship (workspace rule: `visual-review-before
 
 ## Lessons live from this project
 - **Neon has no Middle East region (verified 2026-07-17).** Frankfurt (`eu-central-1`) is the answer for Dubai users, not a fallback. Expected latency ~110ms + serverless cold-starts. See: `~/Claude/scholar/lessons/general/knowledge-systems/blockers-before-recommendations.md` § "Corollary 2026-07-17"
+- **Phase 1 shipped 8 inert controls (2026-08-17).** The backoffice rendered Suspend/Edit/Delete/Add as normal buttons while being a read-only console; Elias found one by clicking, the audit found eight. **Phase 2 rule: a control whose backend does not exist is hidden or `disabled` with a `TODO(phase-2)` marker — never present-and-inert.** Applies directly to orders/payments/wallet UI. See: `~/Claude/scholar/lessons/general/product/no-inert-controls-in-partial-phases.md`
 - **Dev server binding + Next 16 `allowedDevOrigins` broke the review loop 2026-07-16.** Dev servers reviewed off-machine bind `0.0.0.0` and pin `--port 3311`; `next.config.ts` `allowedDevOrigins` must list the Tailscale IP and `*.ts.net`. See: `~/Claude/scholar/lessons/general/coding/verify-before-handoff.md` § "Corollary 2026-07-17"

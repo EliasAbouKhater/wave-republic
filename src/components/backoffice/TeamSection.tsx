@@ -139,7 +139,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="mb-6">
       <div className="text-[13px] font-extrabold text-teal-muted uppercase tracking-wider mb-2.5">{label}</div>
-      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>{children}</div>
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </div>
   );
 }

@@ -31,14 +31,14 @@ export function AnalyticsSection({ data }: { data: AnalyticsData }) {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="font-display font-extrabold text-[26px] text-teal-ink">Analytics</h1>
+        <h1 className="font-display font-extrabold text-[22px] sm:text-[26px] text-teal-ink">Analytics</h1>
         <p className="text-[13px] font-body text-teal-muted mt-1">
           Anonymous view tracking · last {data.rangeDays} days · dedup 30 min per visitor
         </p>
       </header>
 
       {/* Overview stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Stat label="Views (30d)" value={data.overview.totalViews30d} />
         <Stat label="Unique visitors (30d)" value={data.overview.uniqueVisitors30d} accent />
         <Stat label="Unique visitors (7d)" value={data.overview.uniqueVisitors7d} />
@@ -171,8 +171,10 @@ function Tag({ kind }: { kind: "restaurant" | "kiosk" }) {
 
 function Table({ head, rows }: { head: string[]; rows: (string | React.ReactNode)[][] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
+    <div className="overflow-x-auto -mx-1 px-1">
+      {/* Below ~520px the columns would squeeze into each other; let the table
+          keep its natural width and scroll instead. */}
+      <table className="w-full text-[13px] min-w-[420px]">
         <thead>
           <tr>
             {head.map((h, i) => (
