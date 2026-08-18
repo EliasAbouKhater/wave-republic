@@ -1,5 +1,62 @@
 # Work log — Wave Republic (dreamland)
 
+## 2026-08-18 — Customer map removed, backoffice made phone-usable
+
+**Shipped live.** Commits `6c2e726`, `b6fe824`. Deploy verified on
+`wave-republic.vercel.app`.
+
+### Delivered
+1. **Map removed from the customer app.** The List/Map toggle, `MapView`, the
+   `logMapPinTap` writer and `.pin-teardrop` are gone. The backoffice "Map pin
+   taps" panel and the already-logged `map_pin` rows stay readable; `pinColor`,
+   `mapX`, `mapY` survive annotated in the schema, so restoring the map is a
+   revert of one component rather than a rebuild.
+2. **Backoffice is responsive.** Below `md` the sidebar becomes a fixed bottom
+   tab bar plus a compact top bar; grids collapse, modals become bottom sheets,
+   inputs are 16px, touch targets reach 44px via `.tap-target`
+   (`pointer: coarse` only, so desktop density is untouched).
+
+### The actual root cause
+Not CSS. `src/app/layout.tsx` exported no `viewport`, so phones assumed a
+~980px canvas. Every other fix would have been cosmetic without it.
+
+### Bugs found en route (not reported, found by verifying)
+- `RestaurantsSection` set a hard 3-column grid via **inline
+  `gridTemplateColumns`** — invisible to a `grid-cols-*` search, and the real
+  source of the worst overflow (103px).
+- **The same inline-grid bug in Orders, Reports and Team.** Phase-2 gated, so it
+  would have shipped broken the day `NEXT_PUBLIC_PHASE_2_ENABLED` flipped.
+- Menu item rows clipped item names and Remove *inside their own card* — the
+  page-overflow metric could not see it; only a screenshot did.
+- Login inputs were 14px (outside `FormKit`, so the form pass missed them).
+- The analytics table squeezed instead of scrolling.
+- `.no-scrollbar` was used by the customer `BrowseScreen` but never defined.
+
+### Decisions worth remembering
+- **`src/app/(customer)/layout.tsx` has its own `viewport` export** with
+  `maximumScale: 1, userScalable: false`. It pre-dates this work and overrides
+  the root for customer routes, so the **customer app still ships with
+  pinch-zoom disabled** — an accessibility problem, left alone as out of scope.
+  The backoffice correctly serves `width=device-width, initial-scale=1,
+  viewport-fit=cover`. Verified per-route on the live deploy.
+- Bottom tabs scroll horizontally past ~5 items so Phase 2's 7 nav items
+  degrade instead of crushing.
+
+### Verification
+`tsc --noEmit` + `npm run build` clean, including the map commit alone with the
+responsive work stashed (neither commit is a broken bisect state). Audited at
+390×844 against a **production build** and again against the **live deploy**:
+0px horizontal overflow on login, analytics, restaurants, menus, QR and the
+venue modal; no sub-44px target; no sub-16px input.
+
+**A stale `.next` silently served old CSS and made a fully broken production
+build look fine in dev.** Responsive work must be verified against `next start`.
+
+### Open
+- 25 Dependabot vulnerabilities on the public repo (11 high) — pre-existing.
+- Customer-side pinch-zoom is disabled (see above) — worth a decision.
+- Phase 2 not started: orders, payments, wallet. See `docs/payments-planning.md`.
+
 ## 2026-08-17 — Backoffice CRUD, QR freeze, zone removal
 
 **Shipped live.** Commits `89e908c`, `97b8e42`, `f79048b`, `a8cd8c5`.
