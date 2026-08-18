@@ -11,6 +11,8 @@ export type BrowseRestaurant = {
   prep: number;
   rating: number;
   thumbLabel: string;
+  imageUrl: string | null;
+  tags: { id: string; name: string; color: string }[];
   slots: string[]; // "food" | "drinks" | "sweets"
 };
 
@@ -108,7 +110,7 @@ function ListView({ restaurants }: { restaurants: BrowseRestaurant[] }) {
           href={`/menu/${r.id}`}
           className="card flex items-center gap-3 p-3 hover:brightness-[1.02] active:scale-[0.99] transition"
         >
-          <Thumb label={r.thumbLabel} />
+          <Thumb label={r.thumbLabel} src={r.imageUrl} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <div className="font-display font-extrabold text-[15px] text-teal-ink truncate">{r.name}</div>
@@ -123,6 +125,19 @@ function ListView({ restaurants }: { restaurants: BrowseRestaurant[] }) {
               </span>
             </div>
             <div className="text-[12.5px] font-body text-teal-muted mt-0.5 truncate">{r.cuisine}</div>
+            {r.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {r.tags.map((t) => (
+                  <span
+                    key={t.id}
+                    className="text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-full"
+                    style={{ background: t.color, color: "#fff", letterSpacing: "0.3px" }}
+                  >
+                    {t.name}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-3 text-[11.5px] font-extrabold text-teal-muted mt-1.5">
               <span className="flex items-center gap-1" style={{ color: "#FF6B4A" }}>
                 <StarSvg /> {r.rating.toFixed(1)}
@@ -144,7 +159,19 @@ function ListView({ restaurants }: { restaurants: BrowseRestaurant[] }) {
   );
 }
 
-function Thumb({ label }: { label: string }) {
+function Thumb({ label, src }: { label: string; src: string | null }) {
+  if (src) {
+    return (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        className="flex-shrink-0"
+        style={{ width: 60, height: 60, borderRadius: 12, objectFit: "cover" }}
+      />
+    );
+  }
   return (
     <div
       className="grid place-items-center flex-shrink-0"

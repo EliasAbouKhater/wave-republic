@@ -15,6 +15,7 @@
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { requireManager } from "@/lib/auth";
+import { deleteItemImage } from "@/lib/uploadActions";
 
 export type VenueInput = {
   name: string;
@@ -22,6 +23,8 @@ export type VenueInput = {
   cuisine: string;
   prep: number;
   thumbLabel: string;
+  /** Venue photo (Blob URL) or null. Fills the browse tile and menu banner. */
+  imageUrl: string | null;
 };
 
 /**
@@ -46,7 +49,7 @@ function slugify(name: string): string {
 /** Both the venue list and the QR page render venues; refresh both. */
 function refreshVenueViews() {
   revalidatePath("/backoffice/restaurants");
-  revalidatePath("/backoffice/menus");
+  revalidatePath("/backoffice/categories");
   revalidatePath("/backoffice/qr");
   revalidatePath("/");
 }
@@ -100,6 +103,7 @@ export async function createVenue(input: VenueInput): Promise<ActionResult> {
       mapX: 50,
       mapY: 50,
       thumbLabel: (input.thumbLabel.trim() || input.name.trim()).slice(0, 12).toLowerCase(),
+      imageUrl: input.imageUrl,
       deliveryEnabled: true,
     },
   });
@@ -114,7 +118,7 @@ export async function updateVenue(id: string, input: VenueInput): Promise<Action
   const invalid = validate(input);
   if (invalid) return { ok: false, error: invalid };
 
-  const existing = await db.restaurant.findUnique({ where: { id }, select: { id: true } });
+  const existing = await db.restaurant.findUnique({ where: { id }, select: { id: true, imageUrl: true } });
   if (!existing) return { ok: false, error: "Venue not found" };
 
   // Note the absence of `id` and `qrSlug` — both are frozen for QR stability.
@@ -126,8 +130,14 @@ export async function updateVenue(id: string, input: VenueInput): Promise<Action
       cuisine: input.cuisine.trim(),
       prep: Math.round(input.prep),
       thumbLabel: (input.thumbLabel.trim() || input.name.trim()).slice(0, 12).toLowerCase(),
+      imageUrl: input.imageUrl,
     },
   });
+
+  // Drop the replaced blob only after the row is safely written.
+  if (existing.imageUrl && existing.imageUrl !== input.imageUrl) {
+    await deleteItemImage(existing.imageUrl);
+  }
 
   refreshVenueViews();
   return { ok: true };

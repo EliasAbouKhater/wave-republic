@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * Image uploads for menu items, backed by Vercel Blob.
+ * Image uploads for menu items and venues, backed by Vercel Blob.
  *
  * The store must be PUBLIC — guests fetch these URLs directly from the CDN with
  * no session. A private store uploads fine but 403s for anonymous visitors, which
@@ -18,10 +18,24 @@
 import { put, del } from "@vercel/blob";
 import { requireManager } from "@/lib/auth";
 
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB — plenty for a menu photo off a phone
+/**
+ * Cap on what actually reaches Blob storage. The browser compresses to WebP
+ * (~1600px long edge) before uploading, which puts a normal phone photo well
+ * under 1 MB — this is headroom, not a target. The manager-facing limit is the
+ * 25 MB *input* cap in ImageUpload; this is the control that survives someone
+ * calling the action directly.
+ *
+ * Must stay below `serverActions.bodySizeLimit` in next.config.ts, or the
+ * request is rejected by the framework before this check ever runs.
+ */
+const MAX_BYTES = 3 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
 export type UploadResult = { ok: true; url: string } | { ok: false; error: string };
+
+/** Blob folder per subject, so menu and venue photos stay separable. */
+const FOLDERS = { item: "menu-items", venue: "venues" } as const;
+export type ImageKind = keyof typeof FOLDERS;
 
 export async function uploadItemImage(formData: FormData): Promise<UploadResult> {
   await requireManager();
@@ -30,7 +44,9 @@ export async function uploadItemImage(formData: FormData): Promise<UploadResult>
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "No file selected" };
   if (!ALLOWED.includes(file.type)) return { ok: false, error: "Use a JPEG, PNG or WebP image" };
   if (file.size > MAX_BYTES) {
-    return { ok: false, error: `Image must be under 5 MB (this one is ${(file.size / 1024 / 1024).toFixed(1)} MB)` };
+    // Compression should have prevented this; if it did not, say something the
+    // manager can act on rather than echoing a byte count.
+    return { ok: false, error: "That photo could not be optimised small enough. Try a different image." };
   }
 
   const token = process.env.blob_images_READ_WRITE_TOKEN;
@@ -38,9 +54,12 @@ export async function uploadItemImage(formData: FormData): Promise<UploadResult>
     return { ok: false, error: "Image storage is not configured. Set blob_images_READ_WRITE_TOKEN." };
   }
 
+  const kindRaw = formData.get("kind");
+  const kind: ImageKind = kindRaw === "venue" ? "venue" : "item";
+
   try {
     // addRandomSuffix keeps two items named "burger.jpg" from overwriting each other.
-    const blob = await put(`menu-items/${file.name}`, file, {
+    const blob = await put(`${FOLDERS[kind]}/${file.name}`, file, {
       access: "public",
       addRandomSuffix: true,
       contentType: file.type,

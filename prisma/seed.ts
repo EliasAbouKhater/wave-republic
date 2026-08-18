@@ -185,30 +185,36 @@ async function main() {
   }
 
   console.log("Seeding restaurants + menus…");
-  for (const r of restaurants) {
+  // Categories and items are venue-independent now (docs/catalog-plan.md); the
+  // seed still describes them per venue for readability and links them up via
+  // CategoryVenue / ItemCategory.
+  for (const [rIndex, r] of restaurants.entries()) {
     await prisma.restaurant.create({
       data: {
         id: r.id, name: r.name, type: r.type, cuisine: r.cuisine, zoneId: r.zoneId,
         prep: r.prep, rating: r.rating, pinColor: r.pinColor, mapX: r.mapX, mapY: r.mapY,
-        thumbLabel: r.thumbLabel, qrSlug: r.qrSlug,
+        thumbLabel: r.thumbLabel, qrSlug: r.qrSlug, sortOrder: rIndex,
       },
     });
     for (let i = 0; i < r.cats.length; i++) {
       const c = r.cats[i];
       const cat = await prisma.menuCategory.create({
-        data: { restaurantId: r.id, name: c.name, slot: c.slot, sortOrder: i },
+        data: { name: c.name, slot: c.slot, sortOrder: i },
+      });
+      await prisma.categoryVenue.create({
+        data: { categoryId: cat.id, restaurantId: r.id, sortOrder: i },
       });
       for (let j = 0; j < c.items.length; j++) {
         const it = c.items[j];
-        await prisma.menuItem.create({
+        const item = await prisma.menuItem.create({
           data: {
-            restaurantId: r.id,
-            categoryId: cat.id,
             name: it.name,
             description: it.description ?? null,
             priceCents: Math.round(it.price * 100),
-            sortOrder: j,
           },
+        });
+        await prisma.itemCategory.create({
+          data: { itemId: item.id, categoryId: cat.id, sortOrder: j },
         });
       }
     }

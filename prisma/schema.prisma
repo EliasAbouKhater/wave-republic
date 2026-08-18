@@ -73,50 +73,110 @@ model Restaurant {
   pinColor     String                           // auto-assigned from a palette; no UI picker
   mapX         Int                              // 0-100 (%)
   mapY         Int
-  thumbLabel   String                           // "burgers", "tacos", …
+  thumbLabel   String                           // "burgers", "tacos", … — caption + fallback when imageUrl is null
+  imageUrl     String?                          // venue photo (Vercel Blob); fills browse tile, menu banner, backoffice card
   qrSlug       String?   @unique                 // short URL slug for direct-menu QR (e.g. "wave-cafe")
   active       Boolean   @default(true)
+  sortOrder    Int       @default(0)             // browse-screen order; manager drag-and-drop
   deliveryEnabled Boolean @default(true)         // Phase 2 only — no UI, always true for now
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  zone         Zone           @relation(fields: [zoneId], references: [id])
-  categories   MenuCategory[]
-  items        MenuItem[]
-  orders       Order[]
-  staff        Staff[]
+  zone          Zone            @relation(fields: [zoneId], references: [id])
+  categoryLinks CategoryVenue[]
+  tags          VenueTag[]
+  orders        Order[]
+  staff         Staff[]
 }
 
+/// A category is shared across venues via CategoryVenue — it has no owning
+/// restaurant. Migrated from a per-venue model 2026-08-18; see docs/catalog-plan.md.
 model MenuCategory {
-  id           String   @id @default(cuid())
+  id        String   @id @default(cuid())
+  name      String
+  slot      String                               // "food" | "drinks" | "sweets" — browse filter, see docs/catalog-plan.md
+  sortOrder Int      @default(0)                 // fallback order; per-venue order lives on CategoryVenue
+  active    Boolean  @default(true)
+
+  venues    CategoryVenue[]
+  itemLinks ItemCategory[]
+}
+
+/// Which venues serve a category, and where it sits in that venue's menu.
+/// sortOrder is per-pairing: the same category can sit 1st at one venue, 4th at another.
+model CategoryVenue {
+  categoryId   String
   restaurantId String
-  name         String
-  slot         String                            // "food" | "drinks" | "sweets" (for browse filter)
-  sortOrder    Int      @default(0)
-  active       Boolean  @default(true)
+  sortOrder    Int    @default(0)
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  items      MenuItem[]
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  restaurant Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+  @@id([categoryId, restaurantId])
   @@index([restaurantId, sortOrder])
 }
 
+/// Which categories an item appears in, and its position inside each.
+/// An item in two of a venue's categories shows up in both — intended.
+model ItemCategory {
+  itemId     String
+  categoryId String
+  sortOrder  Int    @default(0)
+
+  item     MenuItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  category MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, categoryId])
+  @@index([categoryId, sortOrder])
+}
+
+/// An item reaches venues through its categories, not directly. Price is global
+/// (one price everywhere) — per-venue pricing would be a new join table, not a
+/// change here. See docs/catalog-plan.md.
 model MenuItem {
-  id           String   @id @default(cuid())
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?                            // public Vercel Blob URL; null = placeholder tile
+  priceCents  Int                                // global price — same at every venue that serves it
+  available   Boolean @default(true)
+  active      Boolean @default(true)
+
+  categories ItemCategory[]
+  tags       ItemTag[]
+}
+
+/// Manager-defined labels ("Chef's choice", "Most popular"), shown as chips.
+model Tag {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  color     String                               // chip background
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  items  ItemTag[]
+  venues VenueTag[]
+}
+
+model ItemTag {
+  itemId String
+  tagId  String
+
+  item MenuItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag  Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+}
+
+model VenueTag {
   restaurantId String
-  categoryId   String
-  name         String
-  description  String?
-  imageUrl     String?                           // public Vercel Blob URL; null = placeholder tile
-  priceCents   Int
-  available    Boolean  @default(true)
-  sortOrder    Int      @default(0)
-  active       Boolean  @default(true)
+  tagId        String
 
-  restaurant Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@index([restaurantId, categoryId, sortOrder])
+  @@id([restaurantId, tagId])
 }
 
 model Staff {

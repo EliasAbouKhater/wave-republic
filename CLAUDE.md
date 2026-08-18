@@ -8,7 +8,7 @@ Waterpark food-ordering app. Local folder is `dreamland/`; the **public brand is
 
 Two connected surfaces in one Next.js codebase:
 - **Customer** (mobile PWA, `~390px` iOS-frame viewport): scan QR → browse (list) → menu.
-- **Backoffice** (responsive, phone → desktop): Manager login, analytics, venue + menu CRUD, QR codes.
+- **Backoffice** (responsive, phone → desktop): Manager login, analytics, catalog + venue CRUD, QR codes.
   Below `md` (768px) the sidebar becomes a fixed bottom tab bar + compact top bar;
   grids collapse, modals become bottom sheets. See "Responsive rules" below.
 
@@ -53,13 +53,22 @@ these on signage and bracelets; a changed URL is dead plastic. In short:
 - Changing a QR-reachable route = add a redirect, never reissue the code.
 - One merged **Entry QR** (`/?src=park`) covers park signs *and* entry bracelets.
 
-## Menu item photos
-Managers upload one photo per menu item; guests see it as the menu-row thumbnail
-and the item-page hero. Storage is the **public** Vercel Blob store `blob_images`,
+## Photos (menu items + venues)
+Managers upload one photo per menu item (menu-row thumbnail + item-page hero) and
+one per venue (browse tile, backoffice card, and the full-width menu banner). The
+venue photo is centre-cropped to fill all three; `thumbLabel` is the fallback when
+no photo is set and the caption over the banner regardless. Storage is the **public** Vercel Blob store `blob_images`,
 addressed by `blob_images_READ_WRITE_TOKEN` (passed explicitly — the legacy
 `BLOB_READ_WRITE_TOKEN` points at a PRIVATE store and would 403 for guests).
-Replacing or clearing a photo deletes the old blob. JPEG/PNG/WebP, 5 MB cap,
-enforced server-side in `src/lib/uploadActions.ts`.
+Replacing or clearing a photo deletes the old blob.
+
+**Accept big, store small** (2026-08-18): up to **25 MB** in, compressed in the
+browser to WebP at 1600px long edge before upload, so guests fetch a few hundred
+KB rather than a phone-sized original. Four limits have to stay in order —
+`serverActions.bodySizeLimit` (4 MB) > `MAX_BYTES` (3 MB) > compressed output.
+**Read `docs/photos.md` before changing any of them.** Server Actions cap
+bodies at 1 MB by default, which silently made the old advertised 5 MB limit
+unreachable.
 
 ## Responsive rules
 Both surfaces are phone-first; the backoffice was made responsive 2026-08-18.
@@ -84,6 +93,41 @@ Both surfaces are phone-first; the backoffice was made responsive 2026-08-18.
   table itself. `overflow-x-auto` alone just lets the columns collide.
 - Verified at 390×844 against a **production build** (`next start`), not just dev —
   a stale `.next` silently served the old CSS and hid every fix.
+
+## Catalog model (rewritten 2026-08-18)
+Categories and items are **venue-independent**. Read `docs/catalog-plan.md` before
+touching menu queries.
+- A category reaches venues through `CategoryVenue`; an item reaches categories
+  through `ItemCategory`. A guest sees an item only via
+  **venue → category → item**. There is no `MenuItem.restaurantId`.
+- **Price is global** — one `priceCents` per item, the same at every venue.
+  Per-venue pricing would be a new join table, not a column.
+- `sortOrder` lives on the **join rows**, so a category can sit in a different
+  position at each venue, and an item in a different position in each category.
+- Backoffice split: **Categories & prices** defines categories and items;
+  **Restaurants** assigns categories to each venue. Neither screen is venue-first
+  except that assignment step — this is what makes an existing category reusable.
+- An item in no category is defined but invisible to guests; the Catalog screen
+  surfaces those under "Not in any category".
+- `/item/[id]?from=<venueId>` carries which venue the guest came from, validated
+  server-side against the item's real categories.
+
+## Tags & ordering (2026-08-18)
+- **Tags** are rows (`Tag` + `ItemTag`/`VenueTag`), not strings — renaming or
+  recolouring one updates every chip at once. Managed on `/backoffice/tags`;
+  attached from the item and venue modals. Soft-removed like everything else.
+- **`TAG_COLORS` lives in `src/lib/tagColors.ts`, not `tagActions.ts`.** A
+  `"use server"` file may only export async functions; a constant exported from
+  one becomes an RPC stub and `.map` throws in the browser. Constants shared
+  with client components go in a plain module.
+- **Three independent orderings**, each on the row that owns the relationship:
+  `Restaurant.sortOrder` (browse screen), `CategoryVenue.sortOrder` (categories
+  within one venue), `ItemCategory.sortOrder` (items within one category).
+- Reordering sends the **whole ordered id list**, not a move-delta — idempotent
+  and immune to a stale client.
+- `Reorderable.tsx` gives HTML5 drag *and* ▲▼ buttons. The buttons are not a
+  fallback: HTML5 DnD does not fire on touch, and the backoffice is used on a
+  phone.
 
 ## Rules
 - Money is **AED**, stored as integer `priceCents` (fils). Never float, never `$`.

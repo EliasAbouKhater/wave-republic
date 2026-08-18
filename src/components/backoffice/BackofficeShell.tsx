@@ -14,7 +14,8 @@ type NavItem = { key: string; label: string; shortLabel?: string; href: string; 
 const nav: NavItem[] = [
   { key: "analytics",   label: "Analytics",      href: "/backoffice/analytics" },
   { key: "restaurants", label: "Restaurants",    shortLabel: "Venues", href: "/backoffice/restaurants" },
-  { key: "menus",       label: "Menus & prices", shortLabel: "Menus",  href: "/backoffice/menus" },
+  { key: "categories",  label: "Categories & prices", shortLabel: "Catalog", href: "/backoffice/categories" },
+  { key: "tags",        label: "Tags",           shortLabel: "Tags",   href: "/backoffice/tags" },
   { key: "qr",          label: "QR codes",       shortLabel: "QR",     href: "/backoffice/qr" },
   { key: "orders",      label: "Orders",         href: "/backoffice/orders",  phase2: true },
   { key: "team",        label: "Team",           href: "/backoffice/team",    phase2: true },

@@ -11,10 +11,11 @@ export type MenuData = {
   rating: number;
   prep: number;
   thumbLabel: string;
+  imageUrl: string | null;
   categories: {
     id: string;
     name: string;
-    items: { id: string; name: string; description: string | null; price: number; available: boolean; imageUrl: string | null }[];
+    items: { id: string; name: string; description: string | null; price: number; available: boolean; imageUrl: string | null; tags: { id: string; name: string; color: string }[] }[];
   }[];
 };
 
@@ -27,21 +28,40 @@ export function MenuScreen({ data }: { data: MenuData }) {
     <div className="min-h-screen w-full flex flex-col max-w-[520px] mx-auto" style={{ background: "#EAF7F5" }}>
       {/* banner */}
       <div
-        className="relative flex-shrink-0"
+        className="relative flex-shrink-0 overflow-hidden"
         style={{
           height: 180,
-          background:
-            "linear-gradient(150deg,#0EA5A4,#0BA5E9), repeating-linear-gradient(45deg, rgba(255,255,255,0.16) 0 12px, transparent 12px 24px)",
-          backgroundBlendMode: "overlay",
+          background: data.imageUrl
+            ? "#0B3A39"
+            : "linear-gradient(150deg,#0EA5A4,#0BA5E9), repeating-linear-gradient(45deg, rgba(255,255,255,0.16) 0 12px, transparent 12px 24px)",
+          backgroundBlendMode: data.imageUrl ? undefined : "overlay",
         }}
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, rgba(255,255,255,0.14) 0 12px, transparent 12px 24px)",
-          }}
-        />
+        {data.imageUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.imageUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full"
+              style={{ objectFit: "cover" }}
+            />
+            {/* The back button and caption sit on top — keep them legible over
+                whatever the manager uploaded. */}
+            <div
+              className="absolute inset-0"
+              style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.35) 100%)" }}
+            />
+          </>
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "repeating-linear-gradient(45deg, rgba(255,255,255,0.14) 0 12px, transparent 12px 24px)",
+            }}
+          />
+        )}
         <Link
           href="/"
           className="absolute left-4 grid place-items-center"
@@ -58,7 +78,10 @@ export function MenuScreen({ data }: { data: MenuData }) {
             <path d="m15 6-6 6 6 6" />
           </svg>
         </Link>
-        <div className="absolute top-16 left-0 right-0 text-center text-white/85 text-[13px] font-extrabold uppercase tracking-[0.6px]" style={{ pointerEvents: "none" }}>
+        <div
+          className="absolute top-16 left-0 right-0 text-center text-white/85 text-[13px] font-extrabold uppercase tracking-[0.6px]"
+          style={{ pointerEvents: "none", textShadow: data.imageUrl ? "0 1px 6px rgba(0,0,0,0.55)" : undefined }}
+        >
           {data.thumbLabel}
         </div>
       </div>
@@ -111,7 +134,7 @@ export function MenuScreen({ data }: { data: MenuData }) {
           {data.categories.find((c) => c.id === activeCat)?.items.map((it) => (
             <Link
               key={it.id}
-              href={`/item/${it.id}`}
+              href={`/item/${it.id}?from=${data.id}`}
               className="card p-3 flex items-center gap-3 hover:brightness-[1.02] active:scale-[0.99] transition"
             >
               {it.imageUrl ? (
@@ -134,6 +157,19 @@ export function MenuScreen({ data }: { data: MenuData }) {
               )}
               <div className="flex-1 min-w-0">
                 <div className="font-display font-extrabold text-[14.5px] text-teal-ink truncate">{it.name}</div>
+                {it.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-0.5">
+                    {it.tags.map((t) => (
+                      <span
+                        key={t.id}
+                        className="text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-full"
+                        style={{ background: t.color, color: "#fff", letterSpacing: "0.3px" }}
+                      >
+                        {t.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {it.description && (
                   <div className="text-[12px] font-body text-teal-muted mt-0.5 truncate">{it.description}</div>
                 )}

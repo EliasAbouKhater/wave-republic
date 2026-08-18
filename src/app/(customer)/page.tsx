@@ -7,10 +7,23 @@ export const dynamic = "force-dynamic";
 // Anyone with an entry or venue QR lands here and browses.
 // `?src=` on the URL is captured for attribution by the middleware.
 export default async function CustomerLandingPage() {
+  // Manager-controlled order (drag-and-drop in the backoffice), name as a
+  // stable tiebreak. The Food/Drinks/Sweets filter still keys off category
+  // `slot`, now reached through CategoryVenue.
   const restaurants = await db.restaurant.findMany({
     where: { active: true },
-    orderBy: { name: "asc" },
-    include: { categories: { select: { slot: true } } },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    include: {
+      categoryLinks: {
+        where: { category: { active: true } },
+        select: { category: { select: { slot: true } } },
+      },
+      tags: {
+        where: { tag: { active: true } },
+        select: { tag: { select: { id: true, name: true, color: true } } },
+        orderBy: { tag: { sortOrder: "asc" } },
+      },
+    },
   });
 
   const items: BrowseRestaurant[] = restaurants.map((r) => ({
@@ -21,7 +34,9 @@ export default async function CustomerLandingPage() {
     prep: r.prep,
     rating: r.rating,
     thumbLabel: r.thumbLabel,
-    slots: Array.from(new Set(r.categories.map((c) => c.slot))),
+    imageUrl: r.imageUrl,
+    slots: Array.from(new Set(r.categoryLinks.map((cl) => cl.category.slot))),
+    tags: r.tags.map((t) => t.tag),
   }));
 
   return <BrowseScreen restaurants={items} />;

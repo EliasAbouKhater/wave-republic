@@ -5,18 +5,60 @@ import { logItemView } from "@/lib/analytics";
 
 const money = (cents: number) => `AED ${(cents / 100).toFixed(2)}`;
 
-export default async function ItemDetailPage({ params }: { params: Promise<{ itemId: string }> }) {
+export default async function ItemDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ itemId: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
   const { itemId } = await params;
+  const { from } = await searchParams;
 
+  // An item can now sit in several categories across several venues, so there is
+  // no single owning restaurant. `?from=` carries the venue the guest tapped
+  // through from; it is validated below rather than trusted.
   const item = await db.menuItem.findUnique({
     where: { id: itemId, active: true },
     include: {
-      restaurant: { select: { id: true, name: true, thumbLabel: true, cuisine: true } },
-      category: { select: { name: true } },
+      tags: {
+        where: { tag: { active: true } },
+        select: { tag: { select: { id: true, name: true, color: true } } },
+        orderBy: { tag: { sortOrder: "asc" } },
+      },
+      categories: {
+        where: { category: { active: true } },
+        orderBy: { sortOrder: "asc" },
+        include: {
+          category: {
+            include: {
+              venues: {
+                where: { restaurant: { active: true } },
+                include: {
+                  restaurant: { select: { id: true, name: true, thumbLabel: true, cuisine: true } },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
   if (!item) notFound();
+
+  // Every (category, venue) this item is reachable through.
+  const reachable = item.categories.flatMap((ic) =>
+    ic.category.venues.map((cv) => ({ category: ic.category, restaurant: cv.restaurant })),
+  );
+
+  // Honour ?from= only if the item really is served there; otherwise fall back
+  // to the first venue that serves it.
+  const context = reachable.find((r) => r.restaurant.id === from) ?? reachable[0];
+  if (!context) notFound(); // defined, but on no live menu
+
+  const restaurant = context.restaurant;
+  const category = context.category;
 
   await logItemView(item.id);
 
@@ -51,7 +93,7 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ ite
           />
         )}
         <Link
-          href={`/menu/${item.restaurant.id}`}
+          href={`/menu/${restaurant.id}`}
           className="absolute left-4 grid place-items-center"
           style={{ top: "max(2.5rem, env(safe-area-inset-top))", width: 40, height: 40, background: "rgba(255,255,255,0.92)", borderRadius: 12 }}
           aria-label="Back"
@@ -67,15 +109,28 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ ite
             textShadow: item.imageUrl ? "0 1px 6px rgba(0,0,0,0.55)" : undefined,
           }}
         >
-          {item.restaurant.thumbLabel}
+          {restaurant.thumbLabel}
         </div>
       </div>
 
       {/* content */}
       <div className="flex-1 px-5 pt-6 pb-8 max-w-[520px] w-full mx-auto">
         <div className="text-[12px] font-extrabold text-teal-muted uppercase tracking-wider">
-          {item.category.name} · {item.restaurant.name}
+          {category.name} · {restaurant.name}
         </div>
+        {item.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {item.tags.map((t) => (
+              <span
+                key={t.tag.id}
+                className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full"
+                style={{ background: t.tag.color, color: "#fff", letterSpacing: "0.3px" }}
+              >
+                {t.tag.name}
+              </span>
+            ))}
+          </div>
+        )}
         <h1 className="font-display font-extrabold text-[26px] text-teal-ink mt-1 leading-tight">
           {item.name}
         </h1>
@@ -103,11 +158,11 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ ite
             Sold at
           </div>
           <div className="font-display font-extrabold text-[15.5px] text-teal-ink mt-1">
-            {item.restaurant.name}
+            {restaurant.name}
           </div>
-          <div className="text-[12.5px] font-body text-teal-muted">{item.restaurant.cuisine}</div>
+          <div className="text-[12.5px] font-body text-teal-muted">{restaurant.cuisine}</div>
           <Link
-            href={`/menu/${item.restaurant.id}`}
+            href={`/menu/${restaurant.id}`}
             className="btn-coral inline-flex mt-4"
             style={{ padding: "10px 18px", fontSize: 13 }}
           >

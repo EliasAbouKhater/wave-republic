@@ -6,16 +6,34 @@ import { logRestaurantView } from "@/lib/analytics";
 export default async function MenuPage({ params }: { params: Promise<{ restoId: string }> }) {
   const { restoId } = await params;
 
+  // Categories reach a venue through CategoryVenue, and items reach a category
+  // through ItemCategory. Order comes from the join rows, so the same category
+  // can sit in a different position at each venue. See docs/catalog-plan.md.
   const resto = await db.restaurant.findUnique({
     where: { id: restoId, active: true },
     include: {
-      categories: {
-        where: { active: true },
+      categoryLinks: {
+        where: { category: { active: true } },
         orderBy: { sortOrder: "asc" },
         include: {
-          items: {
-            where: { active: true },
-            orderBy: { sortOrder: "asc" },
+          category: {
+            include: {
+              itemLinks: {
+                where: { item: { active: true } },
+                orderBy: { sortOrder: "asc" },
+                include: {
+                  item: {
+                    include: {
+                      tags: {
+                        where: { tag: { active: true } },
+                        select: { tag: { select: { id: true, name: true, color: true } } },
+                        orderBy: { tag: { sortOrder: "asc" } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -34,16 +52,18 @@ export default async function MenuPage({ params }: { params: Promise<{ restoId: 
     rating: resto.rating,
     prep: resto.prep,
     thumbLabel: resto.thumbLabel,
-    categories: resto.categories.map((c) => ({
-      id: c.id,
-      name: c.name,
-      items: c.items.map((i) => ({
-        id: i.id,
-        name: i.name,
-        description: i.description,
-        price: i.priceCents / 100,
-        available: i.available,
-        imageUrl: i.imageUrl,
+    imageUrl: resto.imageUrl,
+    categories: resto.categoryLinks.map((cl) => ({
+      id: cl.category.id,
+      name: cl.category.name,
+      items: cl.category.itemLinks.map((il) => ({
+        id: il.item.id,
+        name: il.item.name,
+        description: il.item.description,
+        price: il.item.priceCents / 100,
+        available: il.item.available,
+        imageUrl: il.item.imageUrl,
+        tags: il.item.tags.map((t) => t.tag),
       })),
     })),
   };

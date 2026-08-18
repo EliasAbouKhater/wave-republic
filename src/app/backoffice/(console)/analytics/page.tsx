@@ -33,7 +33,15 @@ export default async function AnalyticsPage() {
     }),
     db.menuItem.findMany({
       where: { active: true },
-      select: { id: true, name: true, restaurantId: true },
+      // An item can be served by several venues now, so resolve the set rather
+      // than a single owner. See docs/catalog-plan.md.
+      select: {
+        id: true,
+        name: true,
+        categories: {
+          select: { category: { select: { venues: { select: { restaurantId: true } } } } },
+        },
+      },
     }),
   ]);
 
@@ -96,11 +104,16 @@ export default async function AnalyticsPage() {
       .map((v) => {
         const it = itemLookup.get(v.entityId);
         if (!it) return null;
-        const r = restLookup.get(it.restaurantId);
+        const venueIds = [
+          ...new Set(it.categories.flatMap((c) => c.category.venues.map((v2) => v2.restaurantId))),
+        ];
+        const names = venueIds.map((id) => restLookup.get(id)?.name).filter(Boolean) as string[];
         return {
           id: v.entityId,
           name: it.name,
-          restaurantName: r?.name ?? "?",
+          // Shared items live at several venues; name one and count the rest.
+          restaurantName:
+            names.length === 0 ? "?" : names.length === 1 ? names[0] : `${names[0]} +${names.length - 1}`,
           views: v._count._all,
         };
       })

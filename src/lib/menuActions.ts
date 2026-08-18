@@ -1,14 +1,22 @@
 "use server";
 
 /**
- * Menu mutations — categories and items.
+ * Catalog mutations — categories and items.
  *
- * Prices are stored as integer `priceCents` in AED fils. Never store money as a
- * float. The UI collects a decimal AED amount and converts on the boundary here.
+ * Shape as of 2026-08-18 (see docs/catalog-plan.md):
+ *   - A **category** belongs to no single venue. `CategoryVenue` says which
+ *     venues serve it, and where it sits in each of their menus.
+ *   - An **item** belongs to no single venue either. `ItemCategory` says which
+ *     categories it appears in. An item reaches a guest only via
+ *     item -> category -> venue.
+ *   - **Price is global**: one `priceCents` used by every venue serving the item.
+ *     Per-venue pricing would be a new join table, not a column here.
+ *
+ * Prices are integer `priceCents` in AED fils. Never store money as a float; the
+ * UI collects decimal AED and converts on this boundary.
  *
  * Deletes are soft (`active = false`) per the workspace rule; items also carry a
- * separate `available` flag for the everyday "sold out today" case, which is what
- * the manager actually reaches for most often.
+ * separate `available` flag for the everyday "sold out today" case.
  */
 
 import { db } from "@/lib/db";
@@ -24,12 +32,35 @@ export type ItemInput = {
   priceAed: number;
   available: boolean;
   imageUrl: string | null;
+  /** Categories this item appears in. Empty = defined but not on any menu yet. */
+  categoryIds: string[];
 };
 
-function refreshMenuViews(restaurantId: string) {
-  revalidatePath("/backoffice/menus");
-  revalidatePath(`/menu/${restaurantId}`);
+/**
+ * A shared category can be on several menus, so a single edit invalidates every
+ * venue serving it. Resolve those venues and revalidate each.
+ */
+async function refreshForCategories(categoryIds: string[]): Promise<void> {
+  revalidatePath("/backoffice/categories");
+  revalidatePath("/backoffice/restaurants");
   revalidatePath("/");
+
+  if (categoryIds.length === 0) return;
+  const links = await db.categoryVenue.findMany({
+    where: { categoryId: { in: categoryIds } },
+    select: { restaurantId: true },
+  });
+  for (const id of new Set(links.map((l) => l.restaurantId))) {
+    revalidatePath(`/menu/${id}`);
+  }
+}
+
+async function refreshForItem(itemId: string): Promise<void> {
+  const links = await db.itemCategory.findMany({
+    where: { itemId },
+    select: { categoryId: true },
+  });
+  await refreshForCategories(links.map((l) => l.categoryId));
 }
 
 function validateItem(input: ItemInput): string | null {
@@ -41,98 +72,186 @@ function validateItem(input: ItemInput): string | null {
 
 const toFils = (aed: number) => Math.round(aed * 100);
 
-export async function createCategory(restaurantId: string, name: string, slot: string): Promise<ActionResult> {
-  await requireManager();
+/* ── categories ─────────────────────────────────────────────────────────── */
 
+export async function createCategory(name: string, slot: string): Promise<ActionResult> {
+  await requireManager();
   if (!name.trim()) return { ok: false, error: "Category name is required" };
 
-  const resto = await db.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true } });
-  if (!resto) return { ok: false, error: "Venue not found" };
-
   const last = await db.menuCategory.findFirst({
-    where: { restaurantId },
     orderBy: { sortOrder: "desc" },
     select: { sortOrder: true },
   });
 
   await db.menuCategory.create({
     data: {
-      restaurantId,
       name: name.trim(),
       slot: slot || "food",
       sortOrder: (last?.sortOrder ?? -1) + 1,
     },
   });
 
-  refreshMenuViews(restaurantId);
+  await refreshForCategories([]);
   return { ok: true };
 }
 
-export async function updateCategory(categoryId: string, name: string): Promise<ActionResult> {
+export async function updateCategory(categoryId: string, name: string, slot?: string): Promise<ActionResult> {
   await requireManager();
-
   if (!name.trim()) return { ok: false, error: "Category name is required" };
 
-  const cat = await db.menuCategory.findUnique({
-    where: { id: categoryId },
-    select: { restaurantId: true },
-  });
+  const cat = await db.menuCategory.findUnique({ where: { id: categoryId }, select: { id: true } });
   if (!cat) return { ok: false, error: "Category not found" };
 
-  await db.menuCategory.update({ where: { id: categoryId }, data: { name: name.trim() } });
+  await db.menuCategory.update({
+    where: { id: categoryId },
+    data: { name: name.trim(), ...(slot ? { slot } : {}) },
+  });
 
-  refreshMenuViews(cat.restaurantId);
+  await refreshForCategories([categoryId]);
   return { ok: true };
 }
 
-/** Soft remove. Items underneath are hidden with it but keep their rows. */
+/** Soft remove. Items stay put; the category simply stops rendering. */
 export async function setCategoryActive(categoryId: string, active: boolean): Promise<ActionResult> {
   await requireManager();
 
-  const cat = await db.menuCategory.findUnique({
-    where: { id: categoryId },
-    select: { restaurantId: true },
-  });
+  const cat = await db.menuCategory.findUnique({ where: { id: categoryId }, select: { id: true } });
   if (!cat) return { ok: false, error: "Category not found" };
 
   await db.menuCategory.update({ where: { id: categoryId }, data: { active } });
 
-  refreshMenuViews(cat.restaurantId);
+  await refreshForCategories([categoryId]);
   return { ok: true };
 }
 
-export async function createItem(categoryId: string, input: ItemInput): Promise<ActionResult> {
+/**
+ * Replace the set of venues serving a category. Appends new links at the end of
+ * each venue's menu and drops the ones unticked — existing links keep their
+ * position so re-saving the form does not reshuffle a menu.
+ */
+export async function setCategoryVenues(categoryId: string, restaurantIds: string[]): Promise<ActionResult> {
+  await requireManager();
+
+  const cat = await db.menuCategory.findUnique({ where: { id: categoryId }, select: { id: true } });
+  if (!cat) return { ok: false, error: "Category not found" };
+
+  const existing = await db.categoryVenue.findMany({
+    where: { categoryId },
+    select: { restaurantId: true },
+  });
+  const had = new Set(existing.map((e) => e.restaurantId));
+  const want = new Set(restaurantIds);
+
+  const toAdd = restaurantIds.filter((id) => !had.has(id));
+  const toRemove = [...had].filter((id) => !want.has(id));
+
+  for (const restaurantId of toAdd) {
+    const last = await db.categoryVenue.findFirst({
+      where: { restaurantId },
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+    await db.categoryVenue.create({
+      data: { categoryId, restaurantId, sortOrder: (last?.sortOrder ?? -1) + 1 },
+    });
+  }
+
+  if (toRemove.length > 0) {
+    await db.categoryVenue.deleteMany({
+      where: { categoryId, restaurantId: { in: toRemove } },
+    });
+  }
+
+  // Both the venues gained and the venues lost need their menus rebuilt.
+  revalidatePath("/backoffice/categories");
+  revalidatePath("/backoffice/restaurants");
+  revalidatePath("/");
+  for (const id of new Set([...toAdd, ...toRemove, ...want])) {
+    revalidatePath(`/menu/${id}`);
+  }
+  return { ok: true };
+}
+
+/** The mirror of setCategoryVenues, driven from a venue instead of a category. */
+export async function setVenueCategories(restaurantId: string, categoryIds: string[]): Promise<ActionResult> {
+  await requireManager();
+
+  const venue = await db.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true } });
+  if (!venue) return { ok: false, error: "Venue not found" };
+
+  const existing = await db.categoryVenue.findMany({
+    where: { restaurantId },
+    select: { categoryId: true, sortOrder: true },
+    orderBy: { sortOrder: "desc" },
+  });
+  const had = new Set(existing.map((e) => e.categoryId));
+  const want = new Set(categoryIds);
+
+  let next = (existing[0]?.sortOrder ?? -1) + 1;
+  for (const categoryId of categoryIds.filter((id) => !had.has(id))) {
+    await db.categoryVenue.create({ data: { categoryId, restaurantId, sortOrder: next++ } });
+  }
+
+  const toRemove = [...had].filter((id) => !want.has(id));
+  if (toRemove.length > 0) {
+    await db.categoryVenue.deleteMany({
+      where: { restaurantId, categoryId: { in: toRemove } },
+    });
+  }
+
+  revalidatePath("/backoffice/restaurants");
+  revalidatePath("/backoffice/categories");
+  revalidatePath(`/menu/${restaurantId}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/* ── items ──────────────────────────────────────────────────────────────── */
+
+async function linkItemToCategories(itemId: string, categoryIds: string[]): Promise<void> {
+  const existing = await db.itemCategory.findMany({
+    where: { itemId },
+    select: { categoryId: true },
+  });
+  const had = new Set(existing.map((e) => e.categoryId));
+  const want = new Set(categoryIds);
+
+  for (const categoryId of categoryIds.filter((id) => !had.has(id))) {
+    const last = await db.itemCategory.findFirst({
+      where: { categoryId },
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+    await db.itemCategory.create({
+      data: { itemId, categoryId, sortOrder: (last?.sortOrder ?? -1) + 1 },
+    });
+  }
+
+  const toRemove = [...had].filter((id) => !want.has(id));
+  if (toRemove.length > 0) {
+    await db.itemCategory.deleteMany({ where: { itemId, categoryId: { in: toRemove } } });
+  }
+}
+
+export async function createItem(input: ItemInput): Promise<ActionResult> {
   await requireManager();
 
   const invalid = validateItem(input);
   if (invalid) return { ok: false, error: invalid };
 
-  const cat = await db.menuCategory.findUnique({
-    where: { id: categoryId },
-    select: { id: true, restaurantId: true },
-  });
-  if (!cat) return { ok: false, error: "Category not found" };
-
-  const last = await db.menuItem.findFirst({
-    where: { categoryId },
-    orderBy: { sortOrder: "desc" },
-    select: { sortOrder: true },
-  });
-
-  await db.menuItem.create({
+  const item = await db.menuItem.create({
     data: {
-      restaurantId: cat.restaurantId,
-      categoryId: cat.id,
       name: input.name.trim(),
       description: input.description.trim() || null,
       imageUrl: input.imageUrl,
       priceCents: toFils(input.priceAed),
       available: input.available,
-      sortOrder: (last?.sortOrder ?? -1) + 1,
     },
+    select: { id: true },
   });
 
-  refreshMenuViews(cat.restaurantId);
+  await linkItemToCategories(item.id, input.categoryIds);
+  await refreshForCategories(input.categoryIds);
   return { ok: true };
 }
 
@@ -144,7 +263,7 @@ export async function updateItem(itemId: string, input: ItemInput): Promise<Acti
 
   const item = await db.menuItem.findUnique({
     where: { id: itemId },
-    select: { restaurantId: true, imageUrl: true },
+    select: { imageUrl: true, categories: { select: { categoryId: true } } },
   });
   if (!item) return { ok: false, error: "Item not found" };
 
@@ -159,13 +278,17 @@ export async function updateItem(itemId: string, input: ItemInput): Promise<Acti
     },
   });
 
+  await linkItemToCategories(itemId, input.categoryIds);
+
   // The old photo is now unreachable — drop it so the store does not fill with
   // orphans. Best-effort: the DB row is what matters.
   if (item.imageUrl && item.imageUrl !== input.imageUrl) {
     await deleteItemImage(item.imageUrl);
   }
 
-  refreshMenuViews(item.restaurantId);
+  // Refresh menus the item left as well as the ones it joined.
+  const touched = new Set([...item.categories.map((c) => c.categoryId), ...input.categoryIds]);
+  await refreshForCategories([...touched]);
   return { ok: true };
 }
 
@@ -173,12 +296,12 @@ export async function updateItem(itemId: string, input: ItemInput): Promise<Acti
 export async function setItemAvailable(itemId: string, available: boolean): Promise<ActionResult> {
   await requireManager();
 
-  const item = await db.menuItem.findUnique({ where: { id: itemId }, select: { restaurantId: true } });
+  const item = await db.menuItem.findUnique({ where: { id: itemId }, select: { id: true } });
   if (!item) return { ok: false, error: "Item not found" };
 
   await db.menuItem.update({ where: { id: itemId }, data: { available } });
 
-  refreshMenuViews(item.restaurantId);
+  await refreshForItem(itemId);
   return { ok: true };
 }
 
@@ -186,11 +309,11 @@ export async function setItemAvailable(itemId: string, available: boolean): Prom
 export async function setItemActive(itemId: string, active: boolean): Promise<ActionResult> {
   await requireManager();
 
-  const item = await db.menuItem.findUnique({ where: { id: itemId }, select: { restaurantId: true } });
+  const item = await db.menuItem.findUnique({ where: { id: itemId }, select: { id: true } });
   if (!item) return { ok: false, error: "Item not found" };
 
   await db.menuItem.update({ where: { id: itemId }, data: { active } });
 
-  refreshMenuViews(item.restaurantId);
+  await refreshForItem(itemId);
   return { ok: true };
 }

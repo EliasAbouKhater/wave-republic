@@ -1,5 +1,76 @@
 # Work log — Wave Republic (dreamland)
 
+## 2026-08-18 — v2: photo pipeline, venue photos, shared catalog, tags, ordering
+
+Committed as one v2 batch at Elias's request. **Not deployed** — pushed
+separately after review.
+
+### 1. Photo uploads: accept big, store small
+The advertised 5 MB limit was **fiction**. Next.js Server Actions cap request
+bodies at 1 MB by default and `next.config.ts` never raised it, so any photo
+over ~1 MB failed inside the framework before validation ran. Now: 25 MB
+accepted, compressed in-browser to WebP (1600px items / 2000px venues) before
+upload, `bodySizeLimit` raised to 4mb. Measured 10.4 MB -> 30 KB.
+See `docs/photos.md`.
+
+### 2. Venue photos
+One photo per venue, centre-cropped to fill the browse tile, backoffice card and
+the full-width menu banner. `thumbLabel` remains the fallback and banner caption.
+
+### 3. Catalog v2 — the big one
+Categories and items were **per-venue**, so the same thing was re-created for
+each venue: "Beverages" existed 5 times, "Water" as 5 separate rows.
+
+Now: `CategoryVenue` and `ItemCategory` joins. A category is served by many
+venues; an item appears in many categories; price is global. `sortOrder` lives
+on the join rows so position can differ per venue / per category.
+
+**Backoffice split** (after Elias found the first attempt confusing):
+- *Categories & prices* — define categories and items, venue-independent
+- *Restaurants* — assign categories to each venue
+
+That separation is the whole point: it is what makes an existing category
+reusable on another venue.
+
+Migration was add -> backfill -> verify -> drop, with the new join path proven to
+produce identical menus for all 6 venues before anything was dropped.
+
+### 4. Data cleanup (approved item-by-item)
+95 -> 76 items, 24 -> 22 categories, zero duplicate names. Groupings were
+**derived from the data**, not hand-written — see "failures" below.
+
+### 5. Tags + ordering
+Manager-defined tags (rows, not strings) on venues and items, shown as chips.
+Three independent orderings with drag-and-drop plus ▲▼ buttons.
+
+### Failures worth remembering
+- **First dedupe attempt deleted items.** It looked up items mid-loop, after
+  cascade deletes had already removed them; Slush and Smoothie vanished from
+  four menus. Caught by the script's own before/after check, restored from
+  backup, fixed to resolve all ids up front and throw rather than skip.
+- **Second attempt silently *added* items.** Hand-written groupings put Red Bull
+  in core Beverages, which would have given Snack Attack a drink it does not
+  sell. Restored again; rewrote the plan to be derived from live data.
+- **`TAG_COLORS` exported from a `"use server"` file** became an RPC stub and
+  threw `.map is not a function` in the browser — invisible to tsc *and* the
+  build, caught only by clicking the button.
+- Nearly deleted Wave Cafe's tea by writing "Kara Tea" from memory; the item is
+  "Kark Tea". Caught by checking before running.
+
+**Lesson:** every destructive data script needs its own before/after assertion.
+All three data bugs were caught by that check, not by types or review.
+
+### Open
+- Legacy columns (`MenuCategory.restaurantId`, `MenuItem.restaurantId`,
+  `.categoryId`, `.sortOrder`) still exist — `db push --accept-data-loss` was
+  blocked by the permission classifier. Nullable and unread; harmless.
+- `Garden Veggie (V)` (AED 62 vs 39) and `Popcorn` (20 vs 15) left unmerged:
+  same name, different price. Worth a look — likely a pricing error.
+- Browse Food/Drinks/Sweets filter still keys off `MenuCategory.slot`; needs a
+  decision now that categories are manager-defined.
+- Customer app still ships with pinch-zoom disabled (pre-existing).
+- 25 Dependabot vulnerabilities (11 high) — pre-existing.
+
 ## 2026-08-18 — Customer map removed, backoffice made phone-usable
 
 **Shipped live.** Commits `6c2e726`, `b6fe824`. Deploy verified on

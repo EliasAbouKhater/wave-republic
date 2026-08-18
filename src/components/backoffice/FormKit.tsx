@@ -123,6 +123,69 @@ export function Toggle({
   );
 }
 
+/**
+ * Tick-list for many-to-many assignment — which venues serve a category, which
+ * categories an item sits in. Scrolls rather than growing the modal unboundedly.
+ */
+export function CheckList({
+  options,
+  selected,
+  onChange,
+  empty = "Nothing to choose from yet.",
+}: {
+  options: { id: string; label: string; sublabel?: string }[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+  empty?: string;
+}) {
+  const set = new Set(selected);
+  const toggle = (id: string) => {
+    const next = new Set(set);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onChange([...next]);
+  };
+
+  if (options.length === 0) {
+    return (
+      <div className="text-[12.5px] font-body text-teal-muted mb-3.5">{empty}</div>
+    );
+  }
+
+  return (
+    <div
+      className="mb-3.5 overflow-y-auto"
+      style={{
+        maxHeight: 210,
+        border: "1px solid rgba(16,48,47,0.12)",
+        borderRadius: 12,
+        background: "#F4FBF9",
+      }}
+    >
+      {options.map((o) => (
+        <label
+          key={o.id}
+          className="flex items-center gap-2.5 px-3 cursor-pointer"
+          style={{ minHeight: 44, borderBottom: "1px solid rgba(16,48,47,0.05)" }}
+        >
+          <input
+            type="checkbox"
+            checked={set.has(o.id)}
+            onChange={() => toggle(o.id)}
+            style={{ width: 20, height: 20, accentColor: "var(--color-teal)", flexShrink: 0 }}
+          />
+          <span className="min-w-0">
+            <span className="text-[13.5px] font-body text-teal-ink">{o.label}</span>
+            {o.sublabel && (
+              <span className="text-[11.5px] font-body text-teal-muted ml-1.5">{o.sublabel}</span>
+            )}
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export function ErrorNote({ message }: { message: string | null }) {
   if (!message) return null;
   return (
