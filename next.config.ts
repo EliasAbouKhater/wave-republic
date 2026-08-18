@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
     "100.111.155.23",
     "*.ts.net",
   ],
+  // "Menus & prices" became "Categories & prices" in v2 (2026-08-18) when
+  // categories stopped belonging to a single venue. Managers may have the old
+  // path bookmarked, so redirect rather than 404. Permanent: the route is gone
+  // for good, not moved temporarily.
+  async redirects() {
+    return [
+      { source: "/backoffice/menus", destination: "/backoffice/categories", permanent: true },
+    ];
+  },
   experimental: {
     serverActions: {
       // Server Actions cap request bodies at 1 MB by default, which silently
