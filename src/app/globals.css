@@ -180,17 +180,6 @@ button:focus-visible, a[href]:focus-visible {
     border-color: transparent;
   }
 
-  .pin-teardrop {
-    border-radius: 50% 50% 50% 2px;
-    transform: rotate(45deg);
-    display: grid;
-    place-items: center;
-    color: #fff;
-    font-family: var(--font-display);
-    font-weight: 800;
-  }
-  .pin-teardrop > span { transform: rotate(-45deg); }
-
   .pay-overlay {
     position: absolute;
     inset: 0;

@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { logMapPinTap } from "@/lib/analytics";
 
 export type BrowseRestaurant = {
   id: string;
@@ -11,9 +10,6 @@ export type BrowseRestaurant = {
   cuisine: string;
   prep: number;
   rating: number;
-  pinColor: string;
-  mapX: number;
-  mapY: number;
   thumbLabel: string;
   slots: string[]; // "food" | "drinks" | "sweets"
 };
@@ -32,7 +28,6 @@ export function BrowseScreen({
 }: {
   restaurants: BrowseRestaurant[];
 }) {
-  const [view, setView] = useState<"list" | "map">("list");
   const [filter, setFilter] = useState<Filter>("all");
 
   const shown = useMemo(() => {
@@ -84,36 +79,14 @@ export function BrowseScreen({
           ))}
         </div>
 
-        <div className="flex items-center justify-between mt-4">
+        <div className="mt-4">
           <div className="font-display font-extrabold text-[16px] text-teal-ink">All spots</div>
-          <div
-            className="flex items-center rounded-[14px] p-1"
-            style={{ background: "#fff", border: "1px solid rgba(16,48,47,0.06)" }}
-          >
-            {(["list", "map"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className="font-display font-extrabold px-4 py-1.5 rounded-[10px] text-[13px]"
-                style={{
-                  background: view === v ? "var(--color-teal)" : "transparent",
-                  color: view === v ? "#fff" : "var(--color-teal-muted-4)",
-                }}
-              >
-                {v[0].toUpperCase() + v.slice(1)}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
       {/* body */}
       <div className="flex-1 px-4 pt-3 pb-6">
-        {view === "list" ? (
-          <ListView restaurants={shown} />
-        ) : (
-          <MapView restaurants={shown} />
-        )}
+        <ListView restaurants={shown} />
       </div>
     </div>
   );
@@ -167,50 +140,6 @@ function ListView({ restaurants }: { restaurants: BrowseRestaurant[] }) {
           </svg>
         </Link>
       ))}
-    </div>
-  );
-}
-
-function MapView({ restaurants }: { restaurants: BrowseRestaurant[] }) {
-  const [, startTransition] = useTransition();
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div
-        className="relative overflow-hidden"
-        style={{
-          width: "100%",
-          height: 340,
-          borderRadius: 22,
-          border: "1px solid rgba(16,48,47,0.08)",
-          background: "linear-gradient(135deg,#CDEFEA,#D6ECF9)",
-        }}
-      >
-        <div className="absolute inset-0 grid place-items-center text-[11px] font-extrabold uppercase tracking-widest text-teal-muted-3">
-          Resort map goes here
-        </div>
-        {restaurants.map((r) => (
-          <Link
-            key={r.id}
-            href={`/menu/${r.id}`}
-            onClick={() => startTransition(() => { logMapPinTap(r.id); })}
-            className="absolute"
-            style={{
-              left: `${r.mapX}%`,
-              top: `${r.mapY}%`,
-              transform: "translate(-50%,-100%)",
-            }}
-            aria-label={r.name}
-          >
-            <div
-              className="pin-teardrop"
-              style={{ background: r.pinColor, width: 32, height: 32, boxShadow: "0 8px 16px rgba(0,0,0,0.15)" }}
-            >
-              <span className="text-[13px]">{r.name.charAt(0)}</span>
-            </div>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }

@@ -46,6 +46,5 @@ export async function logItemView(itemId: string): Promise<void> {
   await logView("item", itemId);
 }
 
-export async function logMapPinTap(restaurantId: string): Promise<void> {
-  await logView("map_pin", restaurantId);
-}
+// No `map_pin` writer: the customer map was removed 2026-08-18. The entity type
+// stays so Analytics can still read the rows logged while the map was live.

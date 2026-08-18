@@ -49,3 +49,6 @@ next-env.d.ts
 
 # Local DB dumps — never commit customer data
 backups/
+
+# Ad-hoc QA scratch (screenshots, probe scripts)
+qa-tmp/

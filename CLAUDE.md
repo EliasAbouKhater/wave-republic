@@ -7,7 +7,7 @@ Waterpark food-ordering app. Local folder is `dreamland/`; the **public brand is
 "Wave Republic"** (rebranded 2026-08-03 — internal identifiers deliberately unchanged).
 
 Two connected surfaces in one Next.js codebase:
-- **Customer** (mobile PWA, `~390px` iOS-frame viewport): scan QR → browse (list/map) → menu.
+- **Customer** (mobile PWA, `~390px` iOS-frame viewport): scan QR → browse (list) → menu.
 - **Backoffice** (desktop, `~1180px`): Manager login, analytics, venue + menu CRUD, QR codes.
 
 Built for a **real waterpark client**. Live on Vercel (Hobby) + Neon Postgres (Frankfurt).

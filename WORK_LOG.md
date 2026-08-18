@@ -52,6 +52,12 @@ found was not an isolated bug.
 remove→restore cycle and again across the zone refactor. All 7 live QR targets
 return 200. Rename confirmed not to touch `qrSlug`.
 
+### Lesson filed (Scholar 2026-08-18)
+The eight dead buttons were not eight bugs — they were one structural cause sampled
+once. Phase 2 rule: no inert controls (hidden or `disabled` + `TODO(phase-2)`), and
+classify a bug report as structural vs incidental *before* fixing it.
+See: `~/Claude/scholar/lessons/general/product/no-inert-controls-in-partial-phases.md`
+
 ### Open
 - 25 Dependabot vulnerabilities on the public repo (11 high) — pre-existing.
 - Phase 2 not started: orders, payments, wallet. See `docs/payments-planning.md`.

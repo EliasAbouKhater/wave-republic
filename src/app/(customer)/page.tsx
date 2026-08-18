@@ -20,9 +20,6 @@ export default async function CustomerLandingPage() {
     cuisine: r.cuisine,
     prep: r.prep,
     rating: r.rating,
-    pinColor: r.pinColor,
-    mapX: r.mapX,
-    mapY: r.mapY,
     thumbLabel: r.thumbLabel,
     slots: Array.from(new Set(r.categories.map((c) => c.slot))),
   }));

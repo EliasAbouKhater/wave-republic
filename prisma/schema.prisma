@@ -66,6 +66,10 @@ model Restaurant {
   zoneId       String
   prep         Int                              // minutes
   rating       Float
+  // Customer map removed 2026-08-18; these three survive with no customer UI.
+  // Kept so restoring the map is a revert, not a rebuild. Still written on
+  // create (see venueActions) so the data stays valid. Do not drop, do not
+  // build UI on them without asking.
   pinColor     String                           // auto-assigned from a palette; no UI picker
   mapX         Int                              // 0-100 (%)
   mapY         Int
