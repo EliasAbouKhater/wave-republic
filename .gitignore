@@ -52,3 +52,6 @@ backups/
 
 # Ad-hoc QA scratch (screenshots, probe scripts)
 qa-tmp/
+
+# graphify code graph (local only)
+graphify-out/

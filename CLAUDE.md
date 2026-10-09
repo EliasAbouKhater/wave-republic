@@ -149,7 +149,18 @@ Live on Vercel, auto-deploys from `main` on GitHub (`EliasAbouKhater/wave-republ
 Elias reviews UI changes before they ship (workspace rule: `visual-review-before-deploy`).
 `QR_BASE_URL` must be set in Vercel project env or the QR page throws.
 
+## Code Graph (graphify)
+AST-based code map in `graphify-out/graph.json` (154 nodes, 276 edges, 51 communities, 52 source files).
+- **Before exploring code structure**, query the graph first — cheaper than reading files:
+  ```bash
+  graphify query "<question>" --graph graphify-out/graph.json
+  ```
+- Covers all of `src/` (TS/TSX) plus `prisma/seed.ts`.
+- Useful for the frozen-QR constraint: trace what reaches `src/app/(customer)/r/[qrSlug]/` before touching a route — see `docs/qr-stability.md`.
+- Rebuild after major code changes: `bash ~/Claude/tools/graphify-rebuild.sh dreamland`
+
 ## Lessons live from this project
 - **Neon has no Middle East region (verified 2026-07-17).** Frankfurt (`eu-central-1`) is the answer for Dubai users, not a fallback. Expected latency ~110ms + serverless cold-starts. See: `~/Claude/scholar/lessons/general/knowledge-systems/blockers-before-recommendations.md` § "Corollary 2026-07-17"
 - **Phase 1 shipped 8 inert controls (2026-08-17).** The backoffice rendered Suspend/Edit/Delete/Add as normal buttons while being a read-only console; Elias found one by clicking, the audit found eight. **Phase 2 rule: a control whose backend does not exist is hidden or `disabled` with a `TODO(phase-2)` marker — never present-and-inert.** Applies directly to orders/payments/wallet UI. See: `~/Claude/scholar/lessons/general/product/no-inert-controls-in-partial-phases.md`
+- **Catalog v2's dedupe was wrong twice before it was right (2026-08-18).** Attempt 1 silently *deleted* items (lookups mid-loop, after cascade deletes); attempt 2 silently *added* one (hand-written groupings). Neither was caught by tsc, the build, or review — only by the script's own per-venue before/after check. **Rule for the next data script (legacy-column drop, `MenuCategory.slot` retirement): assert the expected delta *before* running — `removed == N` from the approved plan, `added == 0` for any merge — scoped per venue, and throw rather than print.** A global row count would have passed attempt 2. Resolve all ids up front; throw, never skip, on a lookup miss. See: `~/Claude/scholar/lessons/general/deployment/dump-before-breaking-migration.md` § "Data mutation scripts"
 - **Dev server binding + Next 16 `allowedDevOrigins` broke the review loop 2026-07-16.** Dev servers reviewed off-machine bind `0.0.0.0` and pin `--port 3311`; `next.config.ts` `allowedDevOrigins` must list the Tailscale IP and `*.ts.net`. See: `~/Claude/scholar/lessons/general/coding/verify-before-handoff.md` § "Corollary 2026-07-17"
